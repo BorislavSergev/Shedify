@@ -1,0 +1,53 @@
+{
+    "general": {
+      "color": "green",
+      "actionButtonText": "Запази час"
+    },
+    "hero": {
+      "title": "Перфектната прическа те очаква",
+      "subtitle":
+        "Намери своя уникален стил с помощта на нашите талантливи бръснари.",
+      "videoUrl":
+        "https://static.videezy.com/system/resources/previews/000/008/452/original/Dark_Haired_Girl_Pensive_Looks_at_Camera.mp4",
+      "imageUrl":
+        "https://whezhucleldvktilymbg.supabase.co/storage/v1/object/public/Business/business_7a0796c0-ce56-468b-8f97-963e0df54a58/hero/hero-backgroundImageUrl.jpg"
+    },
+    "about": {
+      "title": "За нас",
+      "description":
+        "Ние сме екип от професионалисти, които се стремят да предоставят най-доброто обслужване и да ви помогнат да намерите своя уникален стил.",
+      "imageUrl":
+        "https://images.unsplash.com/photo-1588702547919-26089e690ecc?auto=format&q=80&fit=crop&w=800"
+    },
+    "services": [
+      {
+        "title": "Класическо подстригване",
+        "description": "Изчистен и професионален стил.",
+        "iconUrl": "https://via.placeholder.com/64?text=Icon1"
+      },
+      {
+        "title": "Модерни подстрижки",
+        "description": "Дизайни, които са актуални и стилни.",
+        "iconUrl": "https://via.placeholder.com/64?text=Icon2"
+      },
+      {
+        "title": "Грижа за брада",
+        "description": "Перфектно оформена и поддържана брада.",
+        "iconUrl": "https://via.placeholder.com/64?text=Icon3"
+      }
+    ],
+    "testimonials": [
+      {
+        "name": "Иван Петров",
+        "feedback":
+          "Уникално обслужване! С удоволствие бих препоръчал на всеки."
+      },
+      {
+        "name": "Мария Димитрова",
+        "feedback": "Моят стил никога не е изглеждал толкова добре!"
+      }
+    ],
+    "footer": {
+      "copyright": "© 2025 Glamour Spa. All rights reserved."
+    }
+  }

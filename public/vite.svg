@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="#1cd05e" opacity="0.1"/>
+  
+  <!-- Main 'S' Shape -->
+  <path d="M320 160C320 138.909 303.091 122 282 122H230C208.909 122 192 138.909 192 160V160C192 181.091 208.909 198 230 198H282C303.091 198 320 214.909 320 236V236C320 257.091 303.091 274 282 274H230C208.909 274 192 257.091 192 236" 
+    stroke="#1cd05e" 
+    stroke-width="32" 
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+  
+  <!-- Calendar Lines -->
+  <path d="M160 352H352M200 312H312" 
+    stroke="#1cd05e" 
+    stroke-width="24" 
+    stroke-linecap="round"/>
+  
+  <!-- Outer Circle -->
+  <circle cx="256" cy="256" r="240" 
+    stroke="#1cd05e" 
+    stroke-width="24" 
+    stroke-linecap="round"/>
+</svg>

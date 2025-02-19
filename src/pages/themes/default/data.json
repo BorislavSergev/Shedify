@@ -1,0 +1,33 @@
+{
+  "general": {
+    "color": "green",
+    "actionButtonText": "Запази час"
+  },
+  "hero": {
+    "title": "Перфектната прическа те очаква",
+    "backgroundImageUrl": "https://media.istockphoto.com/id/640276472/photo/skillful-hairdresser-using-blade-for-shaving-beard.jpg?s=612x612&w=0&k=20&c=ZvU0dU02444qcrErRk-noiD1XaUph2GoUinDK2NUGRY=",
+    "subtitle": "Перфектната прическа те очаква - Намери своя уникален стил с помощта на нашите талантливи бръснари."
+  },
+  "about": {
+    "title": "Кои сме ние?",
+    "subtitle": "G-cutz е повече от просто салон за красота. Ние сме място, където се срещат традициите и модерните тенденции. Предлагаме широка гама от услуги за коса, лице и тяло, изпълнявани с внимание към детайла. Нашата цел е да подчертаем твоята индивидуалност и да ти помогнем да постигнеш желания образ.",
+    "imageUrl": "https://media.istockphoto.com/id/640276472/photo/skillful-hairdresser-using-blade-for-shaving-beard.jpg?s=612x612&w=0&k=20&c=ZvU0dU02444qcrErRk-noiD1XaUph2GoUinDK2NUGRY="
+  },
+  "creations": {
+    "title": "Творения",
+    "subtitle": "Убедете се сами в качеството на нашите услуги. Вижте щастливите усмивки на нашите клиенти.",
+    "images": [
+      "https://media.istockphoto.com/id/640276472/photo/skillful-hairdresser-using-blade-for-shaving-beard.jpg?s=612x612&w=0&k=20&c=ZvU0dU02444qcrErRk-noiD1XaUph2GoUinDK2NUGRY=",
+      "https://media.istockphoto.com/id/640276472/photo/skillful-hairdresser-using-blade-for-shaving-beard.jpg?s=612x612&w=0&k=20&c=ZvU0dU02444qcrErRk-noiD1XaUph2GoUinDK2NUGRY=",
+      "https://media.istockphoto.com/id/640276472/photo/skillful-hairdresser-using-blade-for-shaving-beard.jpg?s=612x612&w=0&k=20&c=ZvU0dU02444qcrErRk-noiD1XaUph2GoUinDK2NUGRY="
+    ]
+  },
+  "uniqueStyle": {
+    "title": "Открийте своя уникален стил",
+    "subtitle": "Готови ли сте да преобразите външния си вид и да повишите самочувствието си? В [Име на салона] ви предлагаме персонализирани услуги, които ще ви помогнат да постигнете желаните резултати. Нашият екип от опитни специалисти ще ви посрещне с усмивка и ще ви помогне да се почувствате като у дома си. Не чакайте повече, за да започнете своето пътуване към по-добрата версия на себе си.",
+    "imageUrl": "https://media.istockphoto.com/id/640276472/photo/skillful-hairdresser-using-blade-for-shaving-beard.jpg?s=612x612&w=0&k=20&c=ZvU0dU02444qcrErRk-noiD1XaUph2GoUinDK2NUGRY="
+  },
+  "footer": {
+      "copyright": "© 2025 Glamour Spa. All rights reserved."
+  }
+}
