@@ -4,6 +4,7 @@ import supabase from "../hooks/supabase";
 import { Search, Calendar, Mail, Phone, Filter, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from '../contexts/LanguageContext';
+import axios from "axios";
 
 // Badge Component
 const Badge = ({ children, className, ...props }) => {
@@ -90,10 +91,10 @@ const Reservations = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const navigate = useNavigate();
+  const [business, setBusiness] = useState(null);
+  const [businessLanguage, setBusinessLanguage] = useState('bulgarian');
 
   // Get current business from localStorage with safety check
-  const currentBusiness = JSON.parse(localStorage.getItem("selectedBusiness") || "null");
-
   const selectedBusiness = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("selectedBusiness")) || {};
@@ -104,6 +105,28 @@ const Reservations = () => {
   }, []);
 
   useEffect(() => {
+    const fetchBusinessData = async () => {
+      try {
+        if (selectedBusiness?.id) {
+          const { data, error } = await supabase
+            .from("Business")
+            .select("*, themeData, language")
+            .eq("id", selectedBusiness.id)
+            .single();
+
+          if (error) throw error;
+          setBusiness(data);
+          setBusinessLanguage(data.language || 'english');
+        }
+      } catch (err) {
+        console.error("Error fetching business data:", err);
+      }
+    };
+
+    fetchBusinessData();
+  }, [selectedBusiness?.id]);
+
+  useEffect(() => {
     // First, get the current user
     const getCurrentUser = async () => {
       try {
@@ -111,7 +134,7 @@ const Reservations = () => {
         console.log("Session:", session); // Debug log
         if (session?.user) {
           setCurrentUser(session.user.id);
-          if (currentBusiness?.id) {
+          if (selectedBusiness?.id) {
             fetchReservations();
           }
         } else {
@@ -139,8 +162,8 @@ const Reservations = () => {
 
   useEffect(() => {
     console.log("Current user:", currentUser); // Debug log
-    console.log("Current business:", currentBusiness.id); // Debug log
-    if (currentUser && currentBusiness?.id) {
+    console.log("Current business:", selectedBusiness.id); // Debug log
+    if (currentUser && selectedBusiness?.id) {
       fetchReservations();
     }
   }, [activeTab, currentUser]);
@@ -200,12 +223,75 @@ const Reservations = () => {
 
   const handleStatusUpdate = async (reservationId, newStatus) => {
     try {
+      // First update the status in Supabase
       const { error } = await supabase
         .from("Reservations")
         .update({ status: newStatus })
         .eq("id", reservationId);
 
       if (error) throw error;
+
+      // Get the reservation details
+      const { data: reservation } = await supabase
+        .from("Reservations")
+        .select(`
+          *,
+          BusinessTeam (
+            Users (
+              first_name,
+              last_name
+            )
+          )
+        `)
+        .eq("id", reservationId)
+        .single();
+
+      // Format date and time
+      const date = format(new Date(reservation.reservationAt), "dd/MM/yyyy");
+      const hour = format(new Date(reservation.reservationAt), "HH:mm");
+
+      // Send email notification based on status
+      if (newStatus === 'approved') {
+        // Send acceptance email
+        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/accepted-reservation`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          date,
+          hour,
+          services: reservation.services
+        });
+
+        // Schedule reminder email
+        const reminderResponse = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/schedule-reminder`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          date,
+          hour,
+          services: reservation.services
+        });
+
+        // Update reservation with reminderId
+        const { error: updateError } = await supabase
+          .from("Reservations")
+          .update({ 
+            reminderId: reminderResponse.data.reminderId,
+            reminderDate: reminderResponse.data.reminderDate
+          })
+          .eq("id", reservationId);
+
+        if (updateError) throw updateError;
+
+      } else if (newStatus === 'cancelled') {
+        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/rejected-reservation`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          reason: "Съжаляваме, но резервацията Ви беше отказана."
+        });
+      }
+
       fetchReservations();
     } catch (error) {
       console.error("Error updating reservation status:", error);
@@ -265,6 +351,12 @@ const Reservations = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          {translate('reservations')}
+        </h1>
+      </div>
+
       {/* Header */}
       <div className="mb-8 space-y-4">
         <div className="flex justify-between items-center">
@@ -473,7 +565,7 @@ const Reservations = () => {
                     ))}
                     <div className="border-t mt-2 pt-2 flex justify-between font-medium">
                       <span>{translate('totalPrice')}</span>
-                      <span>${reservation.totalPrice?.toFixed(2) || '0.00'}</span>
+                      <span>{reservation.totalPrice?.toFixed(2) || '0.00'} лв.</span>
                     </div>
                   </div>
                 </div>

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import supabase from "../hooks/supabase";
 import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
 import { useLanguage } from '../contexts/LanguageContext';
+import axios from 'axios';
 
 const Dashboard = () => {
   const { translate } = useLanguage();
@@ -241,16 +242,78 @@ const Dashboard = () => {
 
   const handleStatusUpdate = async (reservationId, newStatus) => {
     try {
+      // First update the status in Supabase
       const { error } = await supabase
-        .from('Reservations')
+        .from("Reservations")
         .update({ status: newStatus })
-        .eq('id', reservationId);
+        .eq("id", reservationId);
 
       if (error) throw error;
-      
-      await fetchDashboardData(); // Refresh data after update
+
+      // Get the reservation details
+      const { data: reservation } = await supabase
+        .from("Reservations")
+        .select(`
+          *,
+          BusinessTeam (
+            Users (
+              first_name,
+              last_name
+            )
+          )
+        `)
+        .eq("id", reservationId)
+        .single();
+
+      // Format date and time
+      const date = format(new Date(reservation.reservationAt), "dd/MM/yyyy");
+      const hour = format(new Date(reservation.reservationAt), "HH:mm");
+
+      // Send email notification based on status
+      if (newStatus === 'approved') {
+        // Send acceptance email
+        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/accepted-reservation`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          date,
+          hour,
+          services: reservation.services
+        });
+
+        // Schedule reminder email
+        const reminderResponse = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/schedule-reminder`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          date,
+          hour,
+          services: reservation.services
+        });
+
+        // Update reservation with reminderId
+        const { error: updateError } = await supabase
+          .from("Reservations")
+          .update({ 
+            reminderId: reminderResponse.data.reminderId,
+            reminderDate: reminderResponse.data.reminderDate
+          })
+          .eq("id", reservationId);
+
+        if (updateError) throw updateError;
+
+      } else if (newStatus === 'cancelled') {
+        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/rejected-reservation`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          reason: "Съжаляваме, но резервацията Ви беше отказана."
+        });
+      }
+
+      fetchDashboardData();
     } catch (error) {
-      console.error('Error updating reservation status:', error);
+      console.error("Error updating reservation status:", error);
       setError(error.message);
     }
   };
@@ -529,7 +592,7 @@ const Dashboard = () => {
       <h1 className="text-3xl font-bold text-gray-900">{translate('dashboard')}</h1>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Today's Earnings Card */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-4">
@@ -833,12 +896,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-xl font-semibold text-gray-900">{translate("revenue")}</h2>
-          <div className="flex gap-2">
+          <div className="w-full sm:w-auto">
             <select
-              className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+              className="w-full sm:w-auto px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
               value={selectedRevenuePeriod}
               onChange={(e) => setSelectedRevenuePeriod(e.target.value)}
             >
@@ -851,16 +914,16 @@ const Dashboard = () => {
         </div>
 
         {selectedRevenuePeriod === 'custom' && (
-          <div className="mb-4 flex gap-4">
+          <div className="mb-4 flex flex-col sm:flex-row gap-4">
             <input
               type="date"
-              className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+              className="w-full sm:w-auto px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
               value={customDateRange.start || ''}
               onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
             />
             <input
               type="date"
-              className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+              className="w-full sm:w-auto px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
               value={customDateRange.end || ''}
               onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
             />
@@ -883,24 +946,24 @@ const Dashboard = () => {
 
       {/* Add Invitation Dialog */}
       {showInviteDialog && inviteDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
             <h2 className="text-xl font-semibold mb-4">
               {translate('businessInvitation')}
             </h2>
             <p className="mb-6">
               {translate('invitationMessage', { businessName: inviteDetails.Business.name })}
             </p>
-            <div className="flex justify-end space-x-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-4">
               <button
                 onClick={handleDeclineInvite}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 {translate('decline')}
               </button>
               <button
                 onClick={handleAcceptInvite}
-                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
               >
                 {translate('accept')}
               </button>
@@ -917,32 +980,34 @@ const AcceptedReservationCard = ({ reservation }) => {
   const { translate } = useLanguage();
   
   return (
-    <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100 hover:shadow-md transition-shadow">
-      <div className="flex-1">
-        <h3 className="font-medium text-gray-900">
-          {reservation.firstName} {reservation.lastName}
-        </h3>
-        <div className="text-sm text-gray-500 space-y-1 mt-1">
-          <p className="flex items-center">
-            <span className="mr-2">🕒</span>
-            {format(new Date(reservation.reservationAt), "HH:mm")}
+    <div className="p-4 bg-green-50 rounded-lg border border-green-100 hover:shadow-md transition-shadow">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 className="font-medium text-gray-900">
+            {reservation.firstName} {reservation.lastName}
+          </h3>
+          <div className="text-sm text-gray-500 space-y-1 mt-1">
+            <p className="flex items-center">
+              <span className="mr-2">🕒</span>
+              {format(new Date(reservation.reservationAt), "HH:mm")}
+            </p>
+            <p className="flex items-center">
+              <span className="mr-2">⏱️</span>
+              {reservation.timeToMake} {translate("minutes")}
+            </p>
+          </div>
+        </div>
+        <div className="sm:text-right">
+          <p className="text-sm font-medium text-gray-900">
+            {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
           </p>
-          <p className="flex items-center">
-            <span className="mr-2">⏱️</span>
-            {reservation.timeToMake} {translate("minutes")}
+          <p className="text-sm text-gray-500 mt-1">
+            {Array.isArray(reservation.services) ? reservation.services.join(", ") : reservation.services}
+          </p>
+          <p className="text-sm font-medium text-accent mt-1">
+            {reservation.totalPrice?.toFixed(2)} лв.
           </p>
         </div>
-      </div>
-      <div className="flex-1 text-right">
-        <p className="text-sm font-medium text-gray-900 truncate">
-          {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
-        </p>
-        <p className="text-sm text-gray-500 mt-1 truncate">
-          {Array.isArray(reservation.services) ? reservation.services.join(", ") : reservation.services}
-        </p>
-        <p className="text-sm font-medium text-accent mt-1">
-          {reservation.totalPrice?.toFixed(2)} лв.
-        </p>
       </div>
     </div>
   );
@@ -953,44 +1018,46 @@ const ReservationCard = ({ reservation, onStatusUpdate }) => {
   const { translate } = useLanguage();
   
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-      <div>
-        <h3 className="font-medium text-gray-900">
-          {reservation.firstName} {reservation.lastName}
-        </h3>
-        <div className="text-sm text-gray-500 space-y-1 mt-1">
-          <p className="flex items-center">
-            <span className="mr-2">📅</span>
-            {format(new Date(reservation.reservationAt), "PPp")}
-          </p>
-          <p className="flex items-center">
-            <span className="mr-2">⏱️</span>
-            {translate("duration")}: {reservation.timeToMake} {translate("minutes")}
-          </p>
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 className="font-medium text-gray-900">
+            {reservation.firstName} {reservation.lastName}
+          </h3>
+          <div className="text-sm text-gray-500 space-y-1 mt-1">
+            <p className="flex items-center">
+              <span className="mr-2">📅</span>
+              {format(new Date(reservation.reservationAt), "PPp")}
+            </p>
+            <p className="flex items-center">
+              <span className="mr-2">⏱️</span>
+              {translate("duration")}: {reservation.timeToMake} {translate("minutes")}
+            </p>
+          </div>
         </div>
-      </div>
-      <div>
-        <div className="text-right mb-2">
-          <p className="text-sm font-medium text-gray-900">
-            {translate("assignedTo")}: {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {Array.isArray(reservation.services) && reservation.services.join(", ")}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onStatusUpdate(reservation.id, 'approved')}
-            className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
-          >
-            {translate("accept")}
-          </button>
-          <button
-            onClick={() => onStatusUpdate(reservation.id, 'cancelled')}
-            className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-          >
-            {translate("decline")}
-          </button>
+        <div className="sm:text-right">
+          <div className="mb-2">
+            <p className="text-sm font-medium text-gray-900">
+              {translate("assignedTo")}: {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              {Array.isArray(reservation.services) && reservation.services.join(", ")}
+            </p>
+          </div>
+          <div className="flex gap-2 justify-start sm:justify-end">
+            <button
+              onClick={() => onStatusUpdate(reservation.id, 'approved')}
+              className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+            >
+              {translate("accept")}
+            </button>
+            <button
+              onClick={() => onStatusUpdate(reservation.id, 'cancelled')}
+              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+            >
+              {translate("decline")}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -57,6 +57,27 @@ const Sidebar = () => {
     fetchPlan();
   }, [navigate]);
 
+  // Add useEffect for click outside handling
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const sidebar = document.querySelector('aside');
+      const menuButton = document.querySelector('[data-menu-button]');
+      
+      if (isMobileMenuOpen && 
+          sidebar && 
+          !sidebar.contains(event.target) && 
+          menuButton && 
+          !menuButton.contains(event.target)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -158,7 +179,7 @@ const Sidebar = () => {
         </div>
 
         <Link
-              to={`/${currentBusiness.id}/`}
+              to={`/${currentBusiness.id}`}
               onClick={(e) => handleNavigation(e, "/business")}
               className={`flex items-center text-lg py-4 px-6 rounded-md transition ${
                 isActive("/business") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
@@ -185,6 +206,7 @@ const Sidebar = () => {
       <div
         className="md:hidden fixed top-1 left-2 z-50 p-4 cursor-pointer"
         onClick={toggleMobileMenu}
+        data-menu-button
       >
         <FaBars className="text-2xl text-gray-700" />
       </div>

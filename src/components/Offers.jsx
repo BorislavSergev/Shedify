@@ -736,7 +736,7 @@ const Offers = () => {
                           ${offer.offer_type === 'discount' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                           {offer.offer_type === 'discount' 
                             ? `${offer.discount_percentage}% ${translate('discount')}`
-                            : `${offer.fixed_price} ${translate('fixedPrice')}`
+                            : `${offer.fixed_price} лв. ${translate('fixedPrice')}`
                           }
                         </span>
                       </td>

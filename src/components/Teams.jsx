@@ -257,14 +257,14 @@ const Teams = () => {
       if (inviteError) throw new Error(inviteError.message);
 
       // Generate invite link
-      const inviteLink = `${window.location.origin}/${userData ? 'dashboard' : 'register'}?token=${token}&business=${selectedBusiness.id}`;
+      const inviteLink = `${process.env.REACT_APP_FRONTEND_URL}/${userData ? 'dashboard' : 'register'}?token=${token}&business=${selectedBusiness.id}`;
 
       try {
         // Send invite email with timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-        const response = await axios.post('http://localhost:3000/invite-team-member', {
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/invite-team-member`, {
           business: selectedBusiness.name,
           email: newMember.email,
           link: inviteLink

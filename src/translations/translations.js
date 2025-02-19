@@ -90,6 +90,7 @@ export const translations = {
     delete: "Изтрий",
 
     // Reservations
+    reservedFor: "Резервирано за",
     newReservation: "Нова резервация",
     pending: "Чакащи",
     accepted: "Приети",
@@ -373,7 +374,7 @@ export const translations = {
     specialPrice: "Специална цена",
     accept: "Приеми",
     decline: "Откажи",
-
+    employee: "Служител",
     verifyIdentity: "Потвърдете самоличността си",
     continue: "Продължи",
     enterVerificationCode: "Въведете код за потвърждение",
@@ -443,6 +444,8 @@ export const translations = {
     from: "From",
     to: "To",
 
+    
+    
     // Plans
     currentPlan: "Current Plan",
     managePlan: "Manage Plan",
@@ -486,6 +489,8 @@ export const translations = {
     delete: "Delete",
 
     // Reservations
+    employee: "Employee",
+    reservedFor: "Reserved For",
     newReservation: "New Reservation",
     pending: "Pending",
     accepted: "Accepted",

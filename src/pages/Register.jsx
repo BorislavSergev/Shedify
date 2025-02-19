@@ -183,7 +183,7 @@ const Register = () => {
     <div className="flex h-screen justify-center items-center bg-primary">
       <div className="w-full max-w-md p-8 bg-white shadow-md rounded-lg">
         <h2 className="text-2xl font-bold text-center mb-6">
-          {isBusinessInvite ? "Accept Team Invitation" : "Create an account"}
+          {isBusinessInvite ? "Приемете покана за екип" : "Създайте акаунт"}
         </h2>
         {errorMessages.length > 0 && (
           <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
@@ -195,7 +195,7 @@ const Register = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="first_name">
-              First Name
+              Име
             </label>
             <input
               id="first_name"
@@ -203,14 +203,14 @@ const Register = () => {
               type="text"
               value={formData.first_name}
               onChange={handleChange}
-              placeholder="Enter your first name"
+              placeholder="Въведете вашето име"
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
               required
             />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="last_name">
-              Last Name
+              Фамилия
             </label>
             <input
               id="last_name"
@@ -218,14 +218,14 @@ const Register = () => {
               type="text"
               value={formData.last_name}
               onChange={handleChange}
-              placeholder="Enter your last name"
+              placeholder="Въведете вашата фамилия"
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
               required
             />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="email">
-              Email
+              Имейл
             </label>
             <input
               id="email"
@@ -233,14 +233,14 @@ const Register = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
+              placeholder="Въведете вашия имейл"
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
               required
             />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="phone_number">
-              Phone Number
+              Телефонен номер
             </label>
             <input
               id="phone_number"
@@ -248,14 +248,14 @@ const Register = () => {
               type="tel"
               value={formData.phone_number}
               onChange={handleChange}
-              placeholder="Enter your phone number"
+              placeholder="Въведете вашия телефонен номер"
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
               required
             />
           </div>
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2" htmlFor="password">
-              Password
+              Парола
             </label>
             <input
               id="password"
@@ -263,7 +263,7 @@ const Register = () => {
               type="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password"
+              placeholder="Въведете вашата парола"
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
               required
             />
@@ -275,8 +275,17 @@ const Register = () => {
             }`}
             disabled={loading}
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? "Регистриране..." : "Регистрирай се"}
           </button>
+          
+          <div className="text-center mt-4">
+            <p className="text-gray-600">
+              Вече имате акаунт?{" "}
+              <a href="/login" className="text-accent hover:text-accentHover">
+                Влезте тук
+              </a>
+            </p>
+          </div>
         </form>
 
         {/* Add Invitation Dialog */}
@@ -284,23 +293,23 @@ const Register = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <h2 className="text-xl font-semibold mb-4">
-                Business Invitation
+                Бизнес покана
               </h2>
               <p className="mb-6">
-                You have been invited to join {inviteBusiness.name}. Would you like to accept this invitation?
+                Поканени сте да се присъедините към {inviteBusiness.name}. Желаете ли да приемете тази покана?
               </p>
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={handleDeclineInvite}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  Decline
+                  Откажи
                 </button>
                 <button
                   onClick={handleAcceptInvite}
                   className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
                 >
-                  Accept
+                  Приеми
                 </button>
               </div>
             </div>

@@ -8,8 +8,13 @@ export default defineConfig({
     'process.env': process.env,
   },
   server: {
+    port: 4173,
     proxy: {
-      '/api': 'http://localhost:5000',  // Adjust to your backend or serverless function URL
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     },
   },
 });

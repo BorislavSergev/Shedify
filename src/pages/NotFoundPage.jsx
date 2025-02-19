@@ -10,15 +10,15 @@ const NotFoundPage = () => {
   };
 
   return (
-    <div className="bg-black text-white font-sans min-h-screen flex justify-center items-center">
+    <div className="bg-primary text-txtPrimary font-sans min-h-screen flex justify-center items-center">
       <motion.div
-        className="text-center px-6 py-10 bg-gray-800 rounded-lg shadow-lg"
+        className="text-center px-8 py-12 bg-white rounded-2xl shadow-xl"
         variants={fadeIn}
         initial="hidden"
         animate="visible"
       >
         <motion.h1
-          className="text-6xl font-bold mb-4"
+          className="text-8xl font-bold mb-6 text-accent"
           variants={fadeIn}
           initial="hidden"
           animate="visible"
@@ -26,20 +26,20 @@ const NotFoundPage = () => {
           404
         </motion.h1>
         <motion.p
-          className="text-xl mb-6"
+          className="text-2xl mb-6 text-txtPrimary font-medium"
           variants={fadeIn}
           initial="hidden"
           animate="visible"
         >
-          Oops! The page you're looking for cannot be found.
+          Упс! Страницата, която търсите, не може да бъде намерена.
         </motion.p>
         <motion.p
-          className="text-lg mb-6"
+          className="text-lg mb-8 text-secondary"
           variants={fadeIn}
           initial="hidden"
           animate="visible"
         >
-          It seems like the page you are looking for does not exist or has been moved.
+          Изглежда, че страницата, която търсите, не съществува или е преместена.
         </motion.p>
         <motion.div
           variants={fadeIn}
@@ -48,9 +48,9 @@ const NotFoundPage = () => {
         >
           <Link
             to="/"
-            className="bg-accent text-white px-6 py-3 rounded-full hover:bg-accent-dark transition"
+            className="bg-accent text-white px-8 py-4 rounded-full hover:bg-accentHover transition-all duration-300 text-lg font-medium"
           >
-            Go Back Home
+            Към началната страница
           </Link>
         </motion.div>
       </motion.div>

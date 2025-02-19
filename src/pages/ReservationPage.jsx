@@ -328,10 +328,10 @@ const ReservationPage = () => {
 
         // Send email notification
         try {
-          await axios.post('http://localhost:3000/pending-reservation', {
+          await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/pending-reservation`, {
             name: `${firstName} ${lastName}`,
             business: BusinessName,
-            link: `http://localhost:5173/manage/reservation/${reservationId}`,
+            link: `${process.env.REACT_APP_FRONTEND_URL}/manage/reservation/${reservationId}`,
             email
           });
         } catch (error) {
