@@ -1,40 +1,47 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import supabase from '../hooks/supabase'; // Import supabase directly
-import { useLanguage } from '../contexts/LanguageContext'; // Import useLanguage
-import { translations } from '../translations/translations'; // Add this import
+import supabase from '../hooks/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../translations/translations';
 
 const Success = () => {
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [showPlanName, setPlanName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0); // Add retry mechanism
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { currentLanguage } = useLanguage();
   const maxRetries = 3;
+  const retryDelay = 2000; // 2 seconds
 
   const selectedBusiness = useMemo(() => {
     try {
-      return JSON.parse(localStorage.getItem("selectedBusiness")) || {};
+      return JSON.parse(localStorage.getItem('selectedBusiness')) || {};
     } catch (error) {
-      console.error("Invalid business data in local storage", error);
+      console.error('Invalid business data in local storage', error);
       return {};
     }
   }, []);
 
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const sessionId = queryParams.get('session_id');
+  const updateBusinessPlan = async (planId, stripeCustomerId) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('Business')
+        .update({
+          planId: planId,
+          stripe_customer_id: stripeCustomerId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedBusiness.id);
 
-    if (sessionId) {
-      fetchSessionData(sessionId);
-    } else {
-      setError(translations[currentLanguage].noSessionId);
-      setLoading(false);
+      if (updateError) throw updateError;
+    } catch (err) {
+      console.error('Error updating business plan:', err);
+      throw new Error(translations[currentLanguage].errorUpdatingPlan);
     }
-  }, [location, retryCount]); // Add retryCount to dependencies
+  };
 
   const fetchSessionData = async (sessionId) => {
     try {
@@ -46,10 +53,7 @@ const Success = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        // Add retry mechanism with exponential backoff
-        retryOn: [503, 504],
-        retries: 3,
-        retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000,
+        credentials: 'include', // Important for CORS
       });
 
       if (!response.ok) {
@@ -57,9 +61,14 @@ const Success = () => {
       }
 
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message || translations[currentLanguage].errorProcessingPayment);
+      }
+
       setSubscriptionInfo(data);
       
-      const subscription = localStorage.getItem("subscription");
+      const subscription = localStorage.getItem('subscription');
       const parsedSubscription = subscription ? JSON.parse(subscription) : null;
       setPlanName(parsedSubscription);
 
@@ -77,46 +86,33 @@ const Success = () => {
       if (retryCount < maxRetries) {
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
-        }, Math.pow(2, retryCount) * 1000); // Exponential backoff
+        }, retryDelay * Math.pow(2, retryCount)); // Exponential backoff
       } else {
-        setError(translations[currentLanguage].errorLoadingSubscription);
+        setError(err.message || translations[currentLanguage].errorLoadingSubscription);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const sessionId = queryParams.get('session_id');
+
+    if (sessionId) {
+      fetchSessionData(sessionId);
+    } else {
+      setError(translations[currentLanguage].noSessionId);
+      setLoading(false);
+    }
+  }, [location, retryCount]);
+
   const handleRetry = () => {
-    setRetryCount(0); // Reset retry count
+    setRetryCount(0);
     setError(null);
     const sessionId = new URLSearchParams(location.search).get('session_id');
     if (sessionId) {
       fetchSessionData(sessionId);
-    }
-  };
-
-  const updateBusinessPlan = async (planId, customerId) => {
-    try {
-      // Get the current user's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Update the business plan in the "Business" table
-      const { data, error } = await supabase
-        .from('Business')
-        .update({ planId, visibility: true, stripe_customer_id: customerId }) // Update planId and set visibility to true
-        .eq('id', selectedBusiness.id); // Assuming you want to update the selected business
-
-      if (error) {
-        throw new Error('Failed to update business plan');
-      }
-
-      console.log('Business plan updated successfully:', data);
-    } catch (err) {
-      console.error('Error updating business plan:', err);
-      setError('Failed to update business plan');
     }
   };
 
