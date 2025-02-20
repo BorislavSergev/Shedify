@@ -115,7 +115,9 @@ const Success = () => {
           subscription,
           parsedSubscription
         });
-        throw new Error(t('noPlanSelected'));
+        // Redirect to plans page if no subscription data is found
+        navigate('/plans');
+        return;
       }
 
       if (!selectedBusiness?.id) {
@@ -123,7 +125,9 @@ const Success = () => {
           selectedBusiness,
           localStorage: localStorage.getItem('selectedBusiness')
         });
-        throw new Error(t('noBusinessSelected'));
+        // Redirect to business selection if no business is selected
+        navigate('/businesses');
+        return;
       }
 
       const response = await fetch(`https://stripe.swiftabook.com/api/checkout-session/${sessionId}`, {
@@ -158,6 +162,9 @@ const Success = () => {
           data.customer,
           data.subscription
         );
+        
+        // Clear subscription data from localStorage after successful update
+        localStorage.removeItem('subscription');
       } else {
         throw new Error(t('missingSubscriptionInfo'));
       }

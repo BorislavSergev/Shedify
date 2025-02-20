@@ -86,6 +86,19 @@ const Plans = () => {
       if (stripeCustomerId) {
         await goToCustomerPortal();
       } else {
+        // Store the selected plan in localStorage before checkout
+        const selectedPlan = plans.find(plan => plan.id === planId);
+        if (!selectedPlan) {
+          throw new Error('Selected plan not found');
+        }
+
+        localStorage.setItem('subscription', JSON.stringify({
+          id: selectedPlan.id,
+          name: selectedPlan.plan_name,
+          price: selectedPlan.price,
+          stripePriceId: selectedPlan.stripe_price_id
+        }));
+        
         // Disable the button while loading
         const button = document.querySelector(`button[data-plan-id="${planId}"]`);
         if (button) button.disabled = true;
@@ -94,7 +107,7 @@ const Plans = () => {
       }
     } catch (error) {
       console.error('Plan selection failed:', error);
-      // Show error to user (you might want to add a toast notification system)
+      // Show error to user
       alert(error.message || 'Failed to process payment. Please try again.');
     } finally {
       // Re-enable the button

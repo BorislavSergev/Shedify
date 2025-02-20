@@ -453,6 +453,7 @@ export const translations = {
     failedToFetchOfferLimitsAndCount: "Грешка при зареждане на лимитите за оферти",
     failedToSaveEditedOffer: "Грешка при запазване на редактираната оферта",
     upgradePlanRequired: "Необходимо е да надградите плана си, за да създадете повече оферти",
+    noPlanSelected: "Не е избран абонаментен план",
   },
   en: {
     // Payment & Subscription
@@ -895,5 +896,6 @@ export const translations = {
     failedToFetchOfferLimitsAndCount: "Failed to fetch offer limits and count",
     failedToSaveEditedOffer: "Failed to save edited offer",
     upgradePlanRequired: "You need to upgrade your plan to create more offers",
+    noPlanSelected: "No subscription plan selected",
   }
 }
