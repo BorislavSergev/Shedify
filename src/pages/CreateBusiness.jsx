@@ -79,17 +79,18 @@ const CreateBusiness = () => {
         .from("Business")
         .insert([{
           name: formData.name,
-          type: "Other",
           owner_id: user.id,
           visibility: false,
-          theme: "default",  // Reference to Themes table
-          themeData: defaultThemeData,  // Store theme data directly in Business table
-          language: "bg",  // Default language
+          theme: "default",
+          language: "bg"
         }])
-        .select()
+        .select('id, name, owner_id, visibility, theme, language')
         .single();
       
-      if (businessError) throw new Error(businessError.message);
+      if (businessError) {
+        console.error('Business Creation Error:', businessError);
+        throw new Error(businessError.message);
+      }
 
       // Add user to BusinessTeam
       const { data: businessTeamData, error: businessTeamError } = await supabase
