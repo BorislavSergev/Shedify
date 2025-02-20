@@ -5,6 +5,9 @@ import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
 
+const BACKEND_EMAIL_URL = process.env.REACT_APP_BACKEND_EMAIL || 'http://localhost:3001';
+const FRONTEND_URL = process.env.REACT_APP_FRONTEND_URL || 'http://localhost:3000';
+
 const Dashboard = () => {
   const { translate } = useLanguage();
   const [loading, setLoading] = useState(true);
@@ -272,7 +275,7 @@ const Dashboard = () => {
       // Send email notification based on status
       if (newStatus === 'approved') {
         // Send acceptance email
-        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/accepted-reservation`, {
+        await axios.post(`${BACKEND_EMAIL_URL}/accepted-reservation`, {
           name: `${reservation.firstName} ${reservation.lastName}`,
           business: selectedBusiness.name,
           email: reservation.email,
@@ -282,7 +285,7 @@ const Dashboard = () => {
         });
 
         // Schedule reminder email
-        const reminderResponse = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/schedule-reminder`, {
+        const reminderResponse = await axios.post(`${BACKEND_EMAIL_URL}/schedule-reminder`, {
           name: `${reservation.firstName} ${reservation.lastName}`,
           business: selectedBusiness.name,
           email: reservation.email,
@@ -303,7 +306,7 @@ const Dashboard = () => {
         if (updateError) throw updateError;
 
       } else if (newStatus === 'cancelled') {
-        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/rejected-reservation`, {
+        await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
           name: `${reservation.firstName} ${reservation.lastName}`,
           business: selectedBusiness.name,
           email: reservation.email,

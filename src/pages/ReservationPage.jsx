@@ -7,6 +7,7 @@ import supabase from "../hooks/supabase";
 import axios from 'axios';
 import { useParams, useSearchParams } from "react-router-dom";
 import { translations } from '../translations/translations';
+import { BACKEND_EMAIL_URL, FRONTEND_URL } from '../config/config';
 
 // ── HELPER FUNCTIONS ─────────────────────────────
 // Convert a HH:MM string to minutes past midnight.
@@ -328,10 +329,10 @@ const ReservationPage = () => {
 
         // Send email notification
         try {
-          await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/pending-reservation`, {
+          await axios.post(`${BACKEND_EMAIL_URL}/pending-reservation`, {
             name: `${firstName} ${lastName}`,
             business: BusinessName,
-            link: `${process.env.REACT_APP_FRONTEND_URL}/manage/reservation/${reservationId}`,
+            link: `${FRONTEND_URL}/manage/reservation/${reservationId}`,
             email
           });
         } catch (error) {

@@ -7,6 +7,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { v4 as uuidv4 } from 'uuid'; // Add this import
 import axios from 'axios';
 import { useToast } from '../contexts/ToastContext';
+import { BACKEND_EMAIL_URL, FRONTEND_URL } from '../config/config';
 
 const Teams = () => {
   const { translate } = useLanguage();
@@ -257,14 +258,14 @@ const Teams = () => {
       if (inviteError) throw new Error(inviteError.message);
 
       // Generate invite link
-      const inviteLink = `${process.env.REACT_APP_FRONTEND_URL}/${userData ? 'dashboard' : 'register'}?token=${token}&business=${selectedBusiness.id}`;
+      const inviteLink = `${FRONTEND_URL}/${userData ? 'dashboard' : 'register'}?token=${token}&business=${selectedBusiness.id}`;
 
       try {
         // Send invite email with timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/invite-team-member`, {
+        const response = await axios.post(`${BACKEND_EMAIL_URL}/invite-team-member`, {
           business: selectedBusiness.name,
           email: newMember.email,
           link: inviteLink

@@ -5,6 +5,7 @@ import { Search, Calendar, Mail, Phone, Filter, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from "axios";
+import { BACKEND_EMAIL_URL, FRONTEND_URL } from '../config/config';
 
 // Badge Component
 const Badge = ({ children, className, ...props }) => {
@@ -253,7 +254,7 @@ const Reservations = () => {
       // Send email notification based on status
       if (newStatus === 'approved') {
         // Send acceptance email
-        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/accepted-reservation`, {
+        await axios.post(`${BACKEND_EMAIL_URL}/accepted-reservation`, {
           name: `${reservation.firstName} ${reservation.lastName}`,
           business: selectedBusiness.name,
           email: reservation.email,
@@ -263,7 +264,7 @@ const Reservations = () => {
         });
 
         // Schedule reminder email
-        const reminderResponse = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/schedule-reminder`, {
+        const reminderResponse = await axios.post(`${BACKEND_EMAIL_URL}/schedule-reminder`, {
           name: `${reservation.firstName} ${reservation.lastName}`,
           business: selectedBusiness.name,
           email: reservation.email,
@@ -284,7 +285,7 @@ const Reservations = () => {
         if (updateError) throw updateError;
 
       } else if (newStatus === 'cancelled') {
-        await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/rejected-reservation`, {
+        await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
           name: `${reservation.firstName} ${reservation.lastName}`,
           business: selectedBusiness.name,
           email: reservation.email,
@@ -292,6 +293,7 @@ const Reservations = () => {
         });
       }
 
+      // Refresh reservations after status update
       fetchReservations();
     } catch (error) {
       console.error("Error updating reservation status:", error);
