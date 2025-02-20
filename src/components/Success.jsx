@@ -106,7 +106,7 @@ const Success = () => {
           parsedSubscription
         });
         // Redirect to plans page if no subscription data is found
-        navigate('/plans');
+        navigate('/dashboard');
         return;
       }
 
@@ -208,27 +208,27 @@ const Success = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-6">
-      <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4 sm:p-6">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-4 sm:p-8 space-y-6">
         {error ? (
           <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
-              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="inline-flex items-center justify-center w-12 sm:w-16 h-12 sm:h-16 rounded-full bg-red-100 mb-4">
+              <svg className="w-6 sm:w-8 h-6 sm:h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('error')}</h1>
-            <p className="text-gray-600">{error}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('error')}</h1>
+            <p className="text-sm sm:text-base text-gray-600">{error}</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
               <button
                 onClick={handleRetry}
-                className="px-6 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-accent text-white text-sm sm:text-base font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
                 {t('tryAgain')}
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-700 text-sm sm:text-base font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
                 {t('backToDashboard')}
               </button>
@@ -236,19 +236,19 @@ const Success = () => {
           </div>
         ) : subscriptionInfo ? (
           <div className="text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="inline-flex items-center justify-center w-12 sm:w-16 h-12 sm:h-16 rounded-full bg-green-100 mb-4">
+              <svg className="w-6 sm:w-8 h-6 sm:h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900">{t('subscriptionSuccessful')}</h1>
-              <p className="text-gray-600">{t('thankYouForSubscribing')}</p>
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-900">{t('subscriptionSuccessful')}</h1>
+              <p className="text-sm sm:text-base text-gray-600">{t('thankYouForSubscribing')}</p>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-xl space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800">{t('subscriptionInformation')}</h2>
-              <div className="space-y-3 divide-y divide-gray-200">
+            <div className="bg-gray-50 p-4 sm:p-6 rounded-xl space-y-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">{t('subscriptionInformation')}</h2>
+              <div className="space-y-3 divide-y divide-gray-200 text-sm sm:text-base">
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">{t('plan')}</span>
                   <span className="font-medium text-gray-900">{showPlanName?.name}</span>
@@ -261,25 +261,25 @@ const Success = () => {
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">{t('customerName')}</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 break-all">
                     {subscriptionInfo.customer_details?.name}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">{t('customerEmail')}</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-gray-600">{t('email')}</span>
+                  <span className="font-medium text-gray-900 break-all">
                     {subscriptionInfo.customer_details?.email}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">{t('customerAddress')}</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 text-right break-all">
                     {subscriptionInfo.customer_details?.address?.line1}, {subscriptionInfo.customer_details?.address?.city}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">{t('status')}</span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800">
                     {t(subscriptionInfo.payment_status)}
                   </span>
                 </div>
@@ -288,17 +288,17 @@ const Success = () => {
 
             <button
               onClick={() => navigate('/dashboard')}
-              className="w-full px-6 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+              className="w-full px-4 sm:px-6 py-2 sm:py-3 bg-accent text-white text-sm sm:text-base font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
             >
               {t('backToDashboard')}
             </button>
           </div>
         ) : (
           <div className="text-center space-y-4">
-            <p className="text-gray-600">{t('noSubscriptionInformation')}</p>
+            <p className="text-sm sm:text-base text-gray-600">{t('noSubscriptionInformation')}</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-accent text-white text-sm sm:text-base font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
             >
               {t('backToDashboard')}
             </button>

@@ -93,6 +93,8 @@ const Sidebar = () => {
       e.preventDefault();
       navigate('/dashboard/subscription');
     }
+    // Close mobile menu after navigation
+    setIsMobileMenuOpen(false);
   };
 
   return (
