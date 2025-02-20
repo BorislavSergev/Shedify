@@ -68,11 +68,10 @@ const CreateBusiness = () => {
       const { error: businessTeamError } = await supabase
         .from("BusinessTeam")
         .insert([{
-          businessId: businessData.id,
-          userId: user.id,
+          business_id: businessData.id,
+          user_id: user.id,
         }])
-        .select()
-        .single();
+        .select();
 
       if (businessTeamError) {
         console.error('BusinessTeam Error:', businessTeamError);
