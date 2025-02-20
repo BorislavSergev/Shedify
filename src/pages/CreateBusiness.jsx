@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import supabase from "../hooks/supabase";
 import { useNavigate } from "react-router-dom";
+import defaultThemeData from "./themes/default/data.json";
 
 const CreateBusiness = () => {
   const [formData, setFormData] = useState({
@@ -48,9 +49,12 @@ const CreateBusiness = () => {
         .insert([{
           name: formData.name.trim(),
           owner_id: user.id,
+          type: "Other",
           visibility: false,
-          theme: "default",
-          language: "bg"
+          theme: "Default",
+          themeData: defaultThemeData,
+          language: "bg",
+          description: null
         }])
         .select('id, name, owner_id, visibility, theme, language')
         .single();
