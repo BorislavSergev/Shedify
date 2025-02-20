@@ -104,25 +104,11 @@ const Plans = () => {
   };
 
   // Add new function to handle test request
-  const handleTest = async () => {
-    try {
-      const response = await fetch('https://stripe.swiftabook.com/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      const data = await response.json();
-      console.log('Test response:', data);
-    } catch (error) {
-      console.error('Test request failed:', error);
-    }
-  };
+  
 
   if (loading) {
     return <div className="flex justify-center items-center p-6"><p className="text-lg">{translations[currentLanguage].loading}</p></div>;
   }
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-b from-gray-50 to-white">
       <div className="text-center mb-8 sm:mb-12">
@@ -133,13 +119,6 @@ const Plans = () => {
           {translations[currentLanguage].choosePlanDescription}
         </p>
         
-        {/* Add test button */}
-        <button
-          onClick={handleTest}
-          className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-        >
-          Test
-        </button>
       </div>
 
       {stripeCustomerId && (

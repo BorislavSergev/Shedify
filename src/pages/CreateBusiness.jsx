@@ -4,9 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const CreateBusiness = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    description: "",
+    name: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,15 +34,57 @@ const CreateBusiness = () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error("User authentication failed");
 
+      const defaultThemeData = {
+        general: {
+          color: "#4CAF50",
+          actionButtonText: "Book Appointment Now"
+        },
+        seo: {
+          title: "Green Scissors | Professional Hair Salon",
+          description: "Experience exceptional haircare at Green Scissors. Our expert stylists deliver cutting-edge styles and personalized service in a modern, eco-friendly environment.",
+          keywords: "hair salon, professional haircuts, eco-friendly salon, green scissors, sustainable beauty",
+          ogImage: "https://images.unsplash.com/photo-1560066984-138dadb4c035"
+        },
+        hero: {
+          backgroundImageUrl: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f",
+          title: "Welcome to Green Scissors",
+          subtitle: "Where Style Meets Sustainability"
+        },
+        about: {
+          title: "About Our Salon",
+          subtitle: "At Green Scissors, we believe in combining exceptional haircare with environmental responsibility. Our team of expert stylists is dedicated to creating beautiful, personalized looks while using eco-friendly products and sustainable practices.",
+          imageUrl: "https://images.unsplash.com/photo-1562322140-8baeececf3df"
+        },
+        creations: {
+          title: "Our Latest Creations",
+          subtitle: "Explore our portfolio of stunning transformations and artistic excellence",
+          images: [
+            "https://images.unsplash.com/photo-1605497788044-5a32c7078486",
+            "https://images.unsplash.com/photo-1492106087820-71f1a00d2b11",
+            "https://images.unsplash.com/photo-1582095133179-bfd08e2fc6b3"
+          ]
+        },
+        uniqueStyle: {
+          title: "Discover Your Unique Style",
+          subtitle: "We specialize in creating personalized looks that enhance your natural beauty while staying true to your individual style. Our experienced team works with you to achieve the perfect look that fits your lifestyle.",
+          imageUrl: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1"
+        },
+        footer: {
+          copyright: `© ${new Date().getFullYear()} ${formData.name}. All rights reserved.`
+        }
+      };
+
       // Create the business using service role to bypass RLS
       const { data: businessData, error: businessError } = await supabase
         .from("Business")
         .insert([{
           name: formData.name,
-          description: formData.description || "Business description", 
-          type: formData.type || "Other",
+          type:  "Other",
           owner_id: user.id,
-          visibility: true
+          visibility: false,
+          theme: "default",  // Reference to Themes table
+          themeData: defaultThemeData,  // Store theme data directly in Business table
+          language: "bg"  // Default language
         }])
         .select()
         .single();
