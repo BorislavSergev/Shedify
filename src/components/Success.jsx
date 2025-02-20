@@ -120,13 +120,21 @@ const Success = () => {
     }
   };
 
+  // Add translation helper function with fallbacks
+  const t = (key) => {
+    if (!translations[currentLanguage]) {
+      return translations.en?.[key] || key;
+    }
+    return translations[currentLanguage][key] || translations.en?.[key] || key;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-          <p className="text-lg text-gray-600">{translations[currentLanguage].processingPayment}</p>
-          <p className="text-sm text-gray-500">{translations[currentLanguage].pleaseWait}</p>
+          <p className="text-lg text-gray-600">{t('processingPayment')}</p>
+          <p className="text-sm text-gray-500">{t('pleaseWait')}</p>
         </div>
       </div>
     );
@@ -142,20 +150,20 @@ const Success = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{translations[currentLanguage].error}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('error')}</h1>
             <p className="text-gray-600">{error}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
               <button
                 onClick={handleRetry}
                 className="px-6 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
-                {translations[currentLanguage].tryAgain}
+                {t('tryAgain')}
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
                 className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
-                {translations[currentLanguage].backToDashboard}
+                {t('backToDashboard')}
               </button>
             </div>
           </div>
@@ -167,33 +175,33 @@ const Success = () => {
               </svg>
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900">{translations[currentLanguage].subscriptionSuccessful}</h1>
-              <p className="text-gray-600">{translations[currentLanguage].thankYouForSubscribing}</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('subscriptionSuccessful')}</h1>
+              <p className="text-gray-600">{t('thankYouForSubscribing')}</p>
             </div>
             
             <div className="bg-gray-50 p-6 rounded-xl space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800">{translations[currentLanguage].subscriptionInformation}</h2>
+              <h2 className="text-xl font-semibold text-gray-800">{t('subscriptionInformation')}</h2>
               <div className="space-y-3 divide-y divide-gray-200">
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">{translations[currentLanguage].plan}</span>
+                  <span className="text-gray-600">{t('plan')}</span>
                   <span className="font-medium text-gray-900">{showPlanName?.name}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">{translations[currentLanguage].price}</span>
+                  <span className="text-gray-600">{t('price')}</span>
                   <span className="font-medium text-gray-900">
                     {subscriptionInfo.amount_total / 100} {subscriptionInfo.currency.toUpperCase()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">{translations[currentLanguage].customerEmail}</span>
+                  <span className="text-gray-600">{t('customerEmail')}</span>
                   <span className="font-medium text-gray-900">
                     {subscriptionInfo.customer_details?.email}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">{translations[currentLanguage].status}</span>
+                  <span className="text-gray-600">{t('status')}</span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    {translations[currentLanguage][subscriptionInfo.payment_status] || subscriptionInfo.payment_status}
+                    {t(subscriptionInfo.payment_status)}
                   </span>
                 </div>
               </div>
@@ -203,17 +211,17 @@ const Success = () => {
               onClick={() => navigate('/dashboard')}
               className="w-full px-6 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
             >
-              {translations[currentLanguage].backToDashboard}
+              {t('backToDashboard')}
             </button>
           </div>
         ) : (
           <div className="text-center space-y-4">
-            <p className="text-gray-600">{translations[currentLanguage].noSubscriptionInformation}</p>
+            <p className="text-gray-600">{t('noSubscriptionInformation')}</p>
             <button
               onClick={() => navigate('/dashboard')}
               className="px-6 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
             >
-              {translations[currentLanguage].backToDashboard}
+              {t('backToDashboard')}
             </button>
           </div>
         )}
