@@ -36,13 +36,13 @@ const Home = () => {
         {/* Logo or Brand */}
         <motion.div variants={itemVariants} className="mb-8">
           <h1 className="text-6xl font-bold bg-gradient-to-r from-[#1cd05e] to-[#40e87c] bg-clip-text text-transparent">
-            Coming Soon
+            Очаквайте скоро
           </h1>
         </motion.div>
 
         {/* Description */}
         <motion.p variants={itemVariants} className="text-xl text-gray-600 mb-12">
-          We're working hard to bring you something amazing. Stay tuned!
+          Работим усилено, за да ви донесем нещо невероятно. Очаквайте!
         </motion.p>
 
         {/* Email Subscription */}
@@ -50,14 +50,14 @@ const Home = () => {
           <form onSubmit={(e) => e.preventDefault()} className="flex flex-col sm:flex-row gap-4 justify-center">
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Въведете вашия имейл"
               className="px-6 py-3 rounded-full bg-white border border-gray-200 focus:outline-none focus:border-[#1cd05e] text-gray-800 w-full sm:w-96"
             />
             <button
               type="submit"
               className="px-8 py-3 rounded-full bg-[#1cd05e] hover:bg-[#19b853] transition-colors duration-300 text-white font-semibold"
             >
-              Notify Me
+              Уведоми ме
             </button>
           </form>
         </motion.div>
@@ -80,7 +80,7 @@ const Home = () => {
 
         {/* Additional Info */}
         <motion.p variants={itemVariants} className="mt-12 text-gray-400">
-          © 2024 Shedify. All rights reserved.
+          © 2024 Shedify. Всички права запазени.
         </motion.p>
       </motion.div>
 

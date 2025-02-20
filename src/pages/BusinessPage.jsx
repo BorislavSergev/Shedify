@@ -21,26 +21,32 @@ const BusinessPage = () => {
           .select("theme, themeData, visibility") 
           .eq("id", id)
           .single();
-        if (error) throw error;
 
-        console.log(data);
+        if (error) {
+          // Handle case when business is not found or other errors
+          if (error.code === 'PGRST116') { // Supabase code for no rows returned
+            navigate('/business/' + id + '/404');
+            return;
+          }
+          throw error;
+        }
+
         if (data.visibility === false) {
-          // Redirect to /404 if visibility is false
           navigate('/business/' + id + "/404");
           return;
         }
 
-        setTheme(data.theme || "default"); // Set the theme (e.g., modern, default)
-        setThemeData(data.themeData || {}); // Load the themeData JSON
+        setTheme(data.theme || "default");
+        setThemeData(data.themeData || {});
         setLoading(false);
       } catch (err) {
-        setError("Failed to load business data.");
-        setLoading(false);
+        console.error(err);
+        navigate('/business/' + id + '/404');
       }
     };
 
     fetchBusinessData();
-  }, [id, navigate]); // Don't forget to include navigate as a dependency
+  }, [id, navigate]);
 
   if (loading) {
     return <div>Loading...</div>;
