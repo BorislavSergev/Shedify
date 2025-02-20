@@ -53,7 +53,7 @@ const Success = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important for CORS
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -64,6 +64,10 @@ const Success = () => {
       
       if (data.error) {
         throw new Error(data.error.message || translations[currentLanguage].errorProcessingPayment);
+      }
+
+      if (data.payment_status !== 'paid' || data.status !== 'complete') {
+        throw new Error(translations[currentLanguage].paymentIncomplete);
       }
 
       setSubscriptionInfo(data);
@@ -86,7 +90,7 @@ const Success = () => {
       if (retryCount < maxRetries) {
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
-        }, retryDelay * Math.pow(2, retryCount)); // Exponential backoff
+        }, retryDelay * Math.pow(2, retryCount));
       } else {
         setError(err.message || translations[currentLanguage].errorLoadingSubscription);
       }
@@ -178,6 +182,12 @@ const Success = () => {
                   <span className="text-gray-600">{translations[currentLanguage].price}</span>
                   <span className="font-medium text-gray-900">
                     {subscriptionInfo.amount_total / 100} {subscriptionInfo.currency.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600">{translations[currentLanguage].customerEmail}</span>
+                  <span className="font-medium text-gray-900">
+                    {subscriptionInfo.customer_details?.email}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
