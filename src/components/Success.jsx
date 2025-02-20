@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import supabase from '../hooks/supabase'; // Import supabase directly
 import { useLanguage } from '../contexts/LanguageContext'; // Import useLanguage
+import { translations } from '../translations/translations'; // Add this import
 
 const Success = () => {
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
