@@ -34,13 +34,24 @@ const CreateBusiness = () => {
       // Get the logged-in user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
-        console.error('Auth Error:', userError);
-        throw new Error("Authentication failed. Please log in again.");
-      }
-      
-      if (!user || !user.id) {
-        throw new Error("No authenticated user found. Please log in.");
+      if (userError) throw new Error("Authentication failed. Please log in again.");
+      if (!user || !user.id) throw new Error("No authenticated user found. Please log in.");
+
+      // First, check if the Default theme exists
+      const { data: themeData, error: themeError } = await supabase
+        .from("Themes")
+        .select("name")
+        .eq("name", "Default")
+        .single();
+
+      if (themeError || !themeData) {
+        console.error('Theme Error:', themeError);
+        // Create the Default theme if it doesn't exist
+        const { error: createThemeError } = await supabase
+          .from("Themes")
+          .insert([{ name: "Default", description: "Default theme" }]);
+        
+        if (createThemeError) throw new Error("Failed to create default theme");
       }
 
       // Create the business
@@ -52,11 +63,11 @@ const CreateBusiness = () => {
           type: "Other",
           visibility: false,
           theme: "Default",
-          themeData: defaultThemeData,
+          themeData: JSON.stringify(defaultThemeData), // Ensure proper JSON formatting
           language: "bg",
           description: null
         }])
-        .select('id, name, owner_id, visibility, theme, language')
+        .select('id, name, owner_id, visibility, theme, themeData, language')
         .single();
       
       if (businessError) {
