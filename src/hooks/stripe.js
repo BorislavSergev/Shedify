@@ -8,25 +8,36 @@ const stripePromise = loadStripe('pk_test_51OYOeyIg0JmvmaJzNlwRU48fe9U7rL5lXoa3Q
 export const useStripeCheckout = () => {
   const [error, setError] = useState(null);
 
-  const handleCheckout = async (priceId) => {
-    console.log('Price ID:', priceId); // Log to see the actual value
+  const handleCheckout = async (stripePriceId) => {
     try {
-      const res = await fetch('https://stripe.swiftabook.com/create-checkout-session', {
+      console.log('Starting checkout with price ID:', stripePriceId); // Debug log
+
+      const response = await fetch('https://stripe.swiftabook.com/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ planId: priceId }), // Ensure the correct plan ID is sent
+        body: JSON.stringify({
+          planId: stripePriceId
+        })
       });
-  
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { url } = await response.json();
+      
+      if (url) {
+        window.location.href = url;
       } else {
-        throw new Error('Session creation failed: No URL in response');
+        throw new Error('No checkout URL received');
       }
     } catch (error) {
-      console.error('Failed to create checkout session:', error);  // Log the error
+      console.error('Failed to create checkout session:', error);
+      throw error; // Re-throw to handle in component
     }
   };
   
