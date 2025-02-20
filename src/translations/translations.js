@@ -436,6 +436,10 @@ export const translations = {
     customerAddress: "Адрес",
     paymentIncomplete: "Незавършено плащане",
     subscriptionId: "Номер на абонамент",
+    errorUpdatingBusiness: "Грешка при обновяване на бизнес информацията",
+    errorUpdatingPlan: "Грешка при обновяване на плана",
+    missingSubscriptionInfo: "Липсва информация за абонамента",
+    subscriptionUpdated: "Абонаментът е обновен успешно",
   },
   en: {
     // Payment & Subscription
@@ -860,5 +864,9 @@ export const translations = {
     customerAddress: "Address",
     paymentIncomplete: "Payment Incomplete",
     subscriptionId: "Subscription ID",
+    errorUpdatingBusiness: "Error updating business information",
+    errorUpdatingPlan: "Error updating plan",
+    missingSubscriptionInfo: "Missing subscription information",
+    subscriptionUpdated: "Subscription updated successfully",
   }
 }

@@ -46,19 +46,36 @@ const Success = () => {
     }
   }, []);
 
-  const updateBusinessPlan = async (planId, stripeCustomerId) => {
+  const updateBusinessPlan = async (planId, stripeCustomerId, subscriptionId) => {
     try {
       const { error: updateError } = await supabase
         .from('Business')
         .update({
           planId: planId,
           stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: subscriptionId,
+          subscription_status: 'active',
+          updated_at: new Date().toISOString()
         })
         .eq('id', selectedBusiness.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating business:', updateError);
+        throw new Error(t('errorUpdatingBusiness'));
+      }
+
+      // Update local storage business data
+      const updatedBusiness = {
+        ...selectedBusiness,
+        planId: planId,
+        stripe_customer_id: stripeCustomerId,
+        stripe_subscription_id: subscriptionId,
+        subscription_status: 'active'
+      };
+      localStorage.setItem('selectedBusiness', JSON.stringify(updatedBusiness));
+
     } catch (err) {
-      console.error('Error updating business plan:', err);
+      console.error('Error in updateBusinessPlan:', err);
       throw new Error(t('errorUpdatingPlan'));
     }
   };
@@ -106,10 +123,18 @@ const Success = () => {
       const parsedSubscription = subscription ? JSON.parse(subscription) : null;
       setPlanName(parsedSubscription);
 
-      if (parsedSubscription && selectedBusiness.id) {
-        if (data.customer) {
-          await updateBusinessPlan(parsedSubscription.id, data.customer);
+      if (parsedSubscription && selectedBusiness?.id) {
+        if (data.customer && data.subscription) {
+          await updateBusinessPlan(
+            parsedSubscription.id, 
+            data.customer,
+            data.subscription
+          );
+        } else {
+          throw new Error(t('missingSubscriptionInfo'));
         }
+      } else {
+        throw new Error(t('noPlanOrBusiness'));
       }
     } catch (err) {
       console.error('Error fetching session:', err);
