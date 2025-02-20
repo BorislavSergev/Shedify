@@ -11,7 +11,7 @@ export const useStripeCheckout = () => {
   const handleCheckout = async (priceId) => {
     console.log('Price ID:', priceId); // Log to see the actual value
     try {
-      const res = await fetch('http://localhost:4242/create-checkout-session', {
+      const res = await fetch('https://stripe.swiftabook.com/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import supabase from '../hooks/supabase'; // Your Supabase hook
 import { useStripeCheckout } from '../hooks/stripe'; // Use custom Stripe checkout hook
+import { translations } from '../translations/translations';
+import { useLanguage } from '../hooks/useLanguage'; // You'll need to create this hook if you haven't already
 
 const Plans = () => {
   const [plans, setPlans] = useState([]);
@@ -8,6 +10,7 @@ const Plans = () => {
   const [stripeCustomerId, setStripeCustomerId] = useState(null); // Track the stripe_customer_id
   const [loading, setLoading] = useState(true);
   const { handleCheckout } = useStripeCheckout(); // Stripe checkout function
+  const { currentLanguage } = useLanguage();
 
   const selectedBusiness = useMemo(() => {
     try {
@@ -59,12 +62,12 @@ const Plans = () => {
 
   const goToCustomerPortal = async () => {
     try {
-      const response = await fetch('http://localhost:4242/create-portal-session', {
+      const response = await fetch('https://stripe.swiftabook.com/create-portal-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ customerId: stripeCustomerId }), // Pass stripe_customer_id
+        body: JSON.stringify({ customerId: stripeCustomerId }),
       });
 
       const data = await response.json();
@@ -89,60 +92,99 @@ const Plans = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center p-6"><p className="text-lg">Loading plans...</p></div>;
+    return <div className="flex justify-center items-center p-6"><p className="text-lg">{translations[currentLanguage].loading}</p></div>;
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <h1 className="text-4xl font-bold text-accent mb-6">Subscription Plans</h1>
+    <div className="max-w-7xl mx-auto p-6 bg-gradient-to-b from-gray-50 to-white">
+      <div className="text-center mb-12">
+        <h1 className="text-5xl font-extrabold text-gray-900 mb-4">
+          {translations[currentLanguage].choosePlan}
+        </h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          {translations[currentLanguage].choosePlanDescription}
+        </p>
+      </div>
 
-      {/* Conditionally render the Manage Subscription button */}
       {stripeCustomerId && (
-        <button
-          onClick={goToCustomerPortal}
-          className="px-5 py-2 mb-6 bg-accent text-white font-semibold rounded-lg shadow-lg hover:scale-105 transition-transform"
-        >
-          Manage subscription
-        </button>
+        <div className="text-center mb-8">
+          <button
+            onClick={goToCustomerPortal}
+            className="px-8 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+          >
+            {translations[currentLanguage].manageSubscription}
+          </button>
+        </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
         {plans.length > 0 ? (
           plans
-            .sort((a, b) => a.id - b.id) // Sort plans by ID in ascending order
+            .sort((a, b) => a.id - b.id)
             .map((plan) => {
               const isCurrentPlan = plan.id === currentPlanId;
 
               return (
                 <div
                   key={plan.id}
-                  className={`bg-white shadow-lg rounded-lg overflow-hidden p-6 flex flex-col justify-between border-2 ${
-                    isCurrentPlan ? 'border-accent' : 'border-transparent'
+                  className={`relative bg-white rounded-2xl overflow-hidden p-8 flex flex-col justify-between transform transition-all duration-300 hover:shadow-2xl ${
+                    isCurrentPlan 
+                      ? 'border-2 border-accent shadow-accent/20' 
+                      : 'border border-gray-100 hover:-translate-y-2'
                   }`}
                 >
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-2">{plan.plan_name}</h2>
-                  <p className="text-gray-600 mb-2">{plan.description}</p>
-                  <p className="text-gray-600 mb-2">Team Size: {plan.team_size}</p>
-                  <p className="text-gray-600 mb-2">Max Services: {plan.max_services}</p>
-                  <p className="text-gray-600 mb-4">Max Offers: {plan.max_offers}</p>
-                  <p className="text-xl font-bold text-gray-900 mb-6">Price: ${plan.price}</p>
-
-                  <button
-                    onClick={() => handlePlanSelect(plan.id, plan.stripe_price_id)}
-                    className={`mt-auto py-2 px-4 rounded-md transition-all transform duration-300 ease-in-out ${
-                      isCurrentPlan
-                        ? 'bg-accent text-white border-accent cursor-not-allowed shadow-lg'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-105'
-                    }`}
-                    disabled={isCurrentPlan}
-                  >
-                    {isCurrentPlan ? 'Current Plan' : `Subscribe for $${plan.price}`}
-                  </button>
+                  {isCurrentPlan && (
+                    <div className="absolute top-4 right-4">
+                      <span className="bg-accent text-white text-sm px-3 py-1 rounded-full">
+                        {translations[currentLanguage].currentPlan}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">{plan.plan_name}</h2>
+                    <p className="text-gray-600 mb-6">{plan.description}</p>
+                    <div className="space-y-3 mb-8">
+                      <div className="flex items-center text-gray-700">
+                        <svg className="w-5 h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                        </svg>
+                        <span>{translations[currentLanguage].teamSize}: {plan.team_size}</span>
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <svg className="w-5 h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                        </svg>
+                        <span>{translations[currentLanguage].maxServices}: {plan.max_services}</span>
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <svg className="w-5 h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                        </svg>
+                        <span>{translations[currentLanguage].maxOffers}: {plan.max_offers}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-gray-900 mb-6">{plan.price} лв.<span className="text-lg text-gray-500">/мес</span></p>
+                    <button
+                      onClick={() => handlePlanSelect(plan.id, plan.stripe_price_id)}
+                      className={`w-full py-3 px-6 rounded-full transition-all duration-300 ${
+                        isCurrentPlan
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-accent text-white hover:bg-accent/90 transform hover:-translate-y-1 hover:shadow-lg'
+                      }`}
+                      disabled={isCurrentPlan}
+                    >
+                      {isCurrentPlan ? translations[currentLanguage].currentPlan : translations[currentLanguage].choosePlan}
+                    </button>
+                  </div>
                 </div>
               );
             })
         ) : (
-          <p className="text-center text-gray-500">No plans available.</p>
+          <div className="col-span-3 text-center py-12">
+            <p className="text-xl text-gray-500">{translations[currentLanguage].noPlansAvailable}</p>
+          </div>
         )}
       </div>
     </div>

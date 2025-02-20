@@ -14,11 +14,11 @@ export const translations = {
     noReservationsFound: "Няма намерени резервации",
     noPendingReservationsMessage: "Няма чакащи резервации",
     noApprovedReservationsMessage: "Няма одобрени резервации",
-    noCancelledReservationsMessage: "Няма отказани резервации", 
+    noCancelledReservationsMessage: "Няма отказани резервации",
     recent: "Скорошни",
     previous: "Предишни",
     score: "Резултат",
-    
+
 
     // Auth
     login: "Вход",
@@ -88,6 +88,17 @@ export const translations = {
     actions: "Действия",
     edit: "Редактирай",
     delete: "Изтрий",
+
+    //Plans
+    choosePlan: "Изберете план",
+    choosePlanDescription: "Изберете перфектния план за вашия бизнес и започнете да растете днес",
+    currentPlan: "Текущ план",
+    manageSubscription: "Управление на абонамент",
+    teamSize: "Размер на екипа",
+    maxServices: "Максимум услуги",
+    maxOffers: "Максимум оферти",
+    noPlansAvailable: "В момента няма налични планове",
+    perMonth: "/мес",
 
     // Reservations
     reservedFor: "Резервирано за",
@@ -308,7 +319,7 @@ export const translations = {
     upcomingReservations: "Upcoming Reservations",
     lastWeek: "Предишната седмица",
     lastMonth: "Предишния месец",
-  
+
     pastReservations: "Предишни резервации",
     noPendingReservations: "Чакащи резервации",
 
@@ -389,6 +400,17 @@ export const translations = {
     confirmReschedule: "Потвърди пренасрочването",
     reschedulingSuccess: "Резервацията е успешно пренасрочена",
 
+    //Plans
+    choosePlan: "Choose Your Plan",
+    choosePlanDescription: "Select the perfect plan for your business needs and start growing today",
+    currentPlan: "Current Plan",
+    manageSubscription: "Manage Subscription",
+    teamSize: "Team Size",
+    maxServices: "Max Services",
+    maxOffers: "Max Offers",
+    noPlansAvailable: "No plans available at the moment",
+    perMonth: "/mo",
+
     // Dashboard Stats
     myTotalReservations: "Мои резервации общо",
     businessTotalReservations: "Резервации за бизнеса",
@@ -444,8 +466,8 @@ export const translations = {
     from: "From",
     to: "To",
 
-    
-    
+
+
     // Plans
     currentPlan: "Current Plan",
     managePlan: "Manage Plan",
