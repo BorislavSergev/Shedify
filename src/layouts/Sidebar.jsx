@@ -135,7 +135,7 @@ const Sidebar = () => {
               <FaCogs className="w-6 h-6 mr-3" />
               <span>{translate('settings')}</span>
             </Link>
-            <Link
+            {/* <Link
               to="/dashboard/customize"
               onClick={(e) => handleNavigation(e, "/dashboard/customize")}
               className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
@@ -144,7 +144,7 @@ const Sidebar = () => {
             >
               <FaPaintBrush className="w-5 h-5 mr-3" />
               <span>{translate('customize')}</span>
-            </Link>
+            </Link> */}
             <Link
               to="/dashboard/reservations"
               onClick={(e) => handleNavigation(e, "/dashboard/reservations")}

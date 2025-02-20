@@ -9,7 +9,7 @@ export const translations = {
     teams: "Екип",
     plans: "Планове",
 
-
+    fromOffer: "От оферта",
     //Dashboard 
     noReservationsFound: "Няма намерени резервации",
     noPendingReservationsMessage: "Няма чакащи резервации",
@@ -440,6 +440,19 @@ export const translations = {
     errorUpdatingPlan: "Грешка при обновяване на плана",
     missingSubscriptionInfo: "Липсва информация за абонамента",
     subscriptionUpdated: "Абонаментът е обновен успешно",
+
+    // Offer error messages
+    teamMemberIdNotFound: "Не е намерен идентификатор на член на екипа",
+    allFieldsRequired: "Всички полета са задължителни",
+    discountPercentageRequired: "Процентът отстъпка е задължителен за оферти с отстъпка",
+    fixedPriceRequired: "Фиксираната цена е задължителна за оферти с фиксирана цена",
+    failedToCreateOffer: "Грешка при създаване на офертата",
+    failedToLoadOffers: "Грешка при зареждане на офертите",
+    failedToDeleteOffer: "Грешка при изтриване на офертата",
+    failedToLoadServices: "Грешка при зареждане на услугите",
+    failedToFetchOfferLimitsAndCount: "Грешка при зареждане на лимитите за оферти",
+    failedToSaveEditedOffer: "Грешка при запазване на редактираната оферта",
+    upgradePlanRequired: "Необходимо е да надградите плана си, за да създадете повече оферти",
   },
   en: {
     // Payment & Subscription
@@ -490,6 +503,7 @@ export const translations = {
     phoneNumber: "Phone Number",
 
     // Common
+    fromOffer: "From Offer",
     save: "Save",
     cancel: "Cancel",
     delete: "Delete",
@@ -868,5 +882,18 @@ export const translations = {
     errorUpdatingPlan: "Error updating plan",
     missingSubscriptionInfo: "Missing subscription information",
     subscriptionUpdated: "Subscription updated successfully",
+
+    // Offer error messages
+    teamMemberIdNotFound: "Team member ID not found",
+    allFieldsRequired: "All fields are required",
+    discountPercentageRequired: "Discount percentage is required for discount offers",
+    fixedPriceRequired: "Fixed price is required for fixed price offers",
+    failedToCreateOffer: "Failed to create offer",
+    failedToLoadOffers: "Failed to load offers",
+    failedToDeleteOffer: "Failed to delete offer",
+    failedToLoadServices: "Failed to load services",
+    failedToFetchOfferLimitsAndCount: "Failed to fetch offer limits and count",
+    failedToSaveEditedOffer: "Failed to save edited offer",
+    upgradePlanRequired: "You need to upgrade your plan to create more offers",
   }
 }

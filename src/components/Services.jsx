@@ -7,10 +7,9 @@ const Services = () => {
   const [services, setServices] = useState([]);
   const [newService, setNewService] = useState({
     name: '',
-    description: '',
     price: '',
-    timetomake: '', // Time to make in minutes (stored as minutes in database)
-    team_id: '', // This will be automatically fetched
+    timetomake: '',
+    team_id: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -156,18 +155,17 @@ const Services = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Handle price formatting (ensure only two decimals)
     if (name === 'price') {
-      const formattedPrice = parseFloat(value).toFixed(2); // Ensures two decimal places
-      setNewService((prevState) => ({
-        ...prevState,
-        [name]: formattedPrice,
-      }));
+      if (value === '') {
+        setNewService(prev => ({ ...prev, price: '' }));
+      } else {
+        const numericValue = value.replace(/[^\d.]/g, '');
+        const parts = numericValue.split('.');
+        const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts[1].slice(0, 2) : '');
+        setNewService(prev => ({ ...prev, price: formattedValue }));
+      }
     } else {
-      setNewService((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
+      setNewService(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -175,24 +173,23 @@ const Services = () => {
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Handle price formatting (ensure only two decimals)
     if (name === 'price') {
-      const formattedPrice = parseFloat(value).toFixed(2); // Ensures two decimal places
-      setCurrentService((prevState) => ({
-        ...prevState,
-        [name]: formattedPrice,
-      }));
+      if (value === '') {
+        setCurrentService(prev => ({ ...prev, price: '' }));
+      } else {
+        const numericValue = value.replace(/[^\d.]/g, '');
+        const parts = numericValue.split('.');
+        const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts[1].slice(0, 2) : '');
+        setCurrentService(prev => ({ ...prev, price: formattedValue }));
+      }
     } else {
-      setCurrentService((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
+      setCurrentService(prev => ({ ...prev, [name]: value }));
     }
   };
 
   // Create a new service and insert into the database
   const createService = async () => {
-    if (!newService.name || !newService.description || !newService.price || !newService.timetomake || !newService.team_id) {
+    if (!newService.name || !newService.price || !newService.timetomake || !newService.team_id) {
       setError('All fields are required');
       return;
     }
@@ -211,7 +208,6 @@ const Services = () => {
       // Clear the form
       setNewService({
         name: '',
-        description: '',
         price: '',
         timetomake: '',
         team_id: '', // Clear team_id
@@ -228,7 +224,7 @@ const Services = () => {
 
   // Edit an existing service
   const editService = async () => {
-    if (!currentService.name || !currentService.description || !currentService.price || !currentService.timetomake || !currentService.team_id) {
+    if (!currentService.name || !currentService.price || !currentService.timetomake || !currentService.team_id) {
       setError('All fields are required');
       return;
     }
@@ -309,11 +305,11 @@ const Services = () => {
             }
           }}
           disabled={loadingAction}
-          className={`px-5 py-3 ${
+          className={`px-3 py-2 sm:px-5 sm:py-3 ${
             isServiceLimitReached || loadingAction 
               ? "bg-gray-400 cursor-not-allowed text-white" 
               : "bg-accent text-white hover:bg-accentHover"
-          } font-semibold rounded-lg shadow-lg transition-all duration-300 flex items-center gap-2`}
+          } font-semibold rounded-lg shadow-lg transition-all duration-300 flex items-center gap-2 text-sm sm:text-base`}
         >
           {loadingAction ? (
             <>
@@ -332,7 +328,7 @@ const Services = () => {
             </> 
           ) : (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
               </svg>
               {translate('addService')}
@@ -361,7 +357,6 @@ const Services = () => {
           currentServices.map((service) => (
             <div key={service.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
               <h3 className="text-xl font-semibold text-gray-800 mb-3">{service.name}</h3>
-              <p className="text-gray-600 mb-4">{service.description}</p>
               <div className="space-y-2">
                 <div className="flex items-center text-gray-500">
                   <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -459,27 +454,14 @@ const Services = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700">{translate('serviceDescription')}</label>
-                <textarea
-                  name="description"
-                  value={newService.description}
-                  onChange={handleInputChange}
-                  placeholder={translate('serviceDescription')}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
                 <label className="block text-gray-700">{translate('price')}</label>
                 <input
-                  type="number"
+                  type="text"
                   name="price"
                   value={newService.price}
                   onChange={handleInputChange}
                   placeholder={translate('price')}
                   className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  step="0.01"
                   required
                 />
               </div>
@@ -566,27 +548,14 @@ const Services = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700">{translate('serviceDescription')}</label>
-                <textarea
-                  name="description"
-                  value={currentService?.description}
-                  onChange={handleEditInputChange}
-                  placeholder={translate('serviceDescription')}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
                 <label className="block text-gray-700">{translate('price')}</label>
                 <input
-                  type="number"
+                  type="text"
                   name="price"
                   value={currentService?.price}
                   onChange={handleEditInputChange}
                   placeholder={translate('price')}
                   className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  step="0.01"
                   required
                 />
               </div>

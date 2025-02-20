@@ -90,7 +90,7 @@ const Reservations = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [showPast, setShowPast] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(4);
   const navigate = useNavigate();
   const [business, setBusiness] = useState(null);
   const [businessLanguage, setBusinessLanguage] = useState('bulgarian');
@@ -168,6 +168,21 @@ const Reservations = () => {
       fetchReservations();
     }
   }, [activeTab, currentUser]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth >= 768 ? 6 : 4);
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchReservations = async () => {
     try {
@@ -334,6 +349,11 @@ const Reservations = () => {
   const indexOfFirstReservation = indexOfLastReservation - itemsPerPage;
   const currentReservations = reservations.slice(indexOfFirstReservation, indexOfLastReservation);
 
+  // Update the pagination section to handle the new itemsPerPage
+  const totalPages = Math.ceil(reservations.length / itemsPerPage);
+  const showingFrom = ((currentPage - 1) * itemsPerPage) + 1;
+  const showingTo = Math.min(currentPage * itemsPerPage, reservations.length);
+
   if (error) {
     return (
       <div className="p-6">
@@ -352,11 +372,6 @@ const Reservations = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {translate('reservations')}
-        </h1>
-      </div>
 
       {/* Header */}
       <div className="mb-8 space-y-4">
@@ -405,8 +420,8 @@ const Reservations = () => {
               {/* Date Range */}
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">{translate('dateRange')}</label>
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="relative flex-1 w-full">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Calendar className="h-4 w-4 text-gray-400" />
                     </div>
@@ -417,8 +432,9 @@ const Reservations = () => {
                       className="pl-10 w-full border rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                   </div>
-                  <span className="text-gray-500">{translate('to')}</span>
-                  <div className="relative flex-1">
+                  <span className="text-gray-500 hidden sm:block">{translate('to')}</span>
+                  <span className="text-gray-500 sm:hidden self-center">{translate('to')}</span>
+                  <div className="relative flex-1 w-full">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Calendar className="h-4 w-4 text-gray-400" />
                     </div>
@@ -528,9 +544,16 @@ const Reservations = () => {
             <Card key={reservation.id} className="overflow-hidden">
               {/* Reservation Status Badge */}
               <div className="p-4 border-b bg-gray-50">
-                <Badge className={statusColors[reservation.status]}>
-                  {translate(reservation.status.toLowerCase())}
-                </Badge>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge className={statusColors[reservation.status]}>
+                    {translate(reservation.status.toLowerCase())}
+                  </Badge>
+                  {reservation.isOfferBooking && (
+                    <Badge className="bg-blue-100 text-blue-800">
+                      {translate('fromOffer')}
+                    </Badge>
+                  )}
+                </div>
                 <p className="mt-2 text-sm text-gray-600">
                   {translate('reservedFor')}: {format(new Date(reservation.reservationAt), "PPp")}
                 </p>
@@ -639,18 +662,23 @@ const Reservations = () => {
         </div>
       )}
 
-      {/* Pagination Controls */}
-      <div className="flex justify-center mt-4">
-        {Array.from({ length: Math.ceil(reservations.length / itemsPerPage) }, (_, index) => (
-          <Button
-            key={index + 1}
-            variant={currentPage === index + 1 ? "default" : "outline"}
-            onClick={() => handlePageChange(index + 1)}
-            className="mx-1"
-          >
-            {index + 1}
-          </Button>
-        ))}
+      {/* Update Pagination Controls with page info */}
+      <div className="mt-8 flex flex-col items-center gap-4">
+        <div className="text-sm text-gray-600">
+        {translate('from')} {showingFrom}-{showingTo}/{reservations.length}
+        </div>
+        <div className="flex justify-center">
+          {Array.from({ length: totalPages }, (_, index) => (
+            <Button
+              key={index + 1}
+              variant={currentPage === index + 1 ? "default" : "outline"}
+              onClick={() => handlePageChange(index + 1)}
+              className="mx-1"
+            >
+              {index + 1}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {error && (

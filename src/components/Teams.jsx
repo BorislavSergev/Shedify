@@ -501,6 +501,16 @@ const Teams = () => {
     ));
   };
 
+  // Add this CSS class utility at the top of the component
+  const cardStyles = {
+    base: "bg-white rounded-lg shadow p-4 mb-4",
+    header: "flex items-center space-x-4 mb-4",
+    content: "space-y-2",
+    label: "text-sm text-gray-500",
+    value: "text-gray-900",
+    actions: "flex justify-end space-x-3 mt-4 pt-4 border-t"
+  };
+
   return (
     <div className="p-6 bg-primary min-h-screen">
       <h2 className="text-4xl font-bold text-accent mb-6">{translate('manageTeam')}</h2>
@@ -609,75 +619,124 @@ const Teams = () => {
         </div>
       )}
 
-      {/* Team Members Table */}
-      <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+      {/* Team Members Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">{translate('teamMembers')}</h3>
         {loading ? (
           <p>{translate('loading')}</p>
         ) : teamMembers.length > 0 ? (
-          <table className="min-w-full table-auto">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-4 text-left">{translate('avatar')}</th>
-                <th className="p-4 text-left">{translate('name')}</th>
-                <th className="p-4 text-left">{translate('email')}</th>
-                <th className="p-4 text-left">{translate('permissions')}</th>
-                <th className="p-4 text-center">{translate('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full table-auto">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-4 text-left">{translate('avatar')}</th>
+                    <th className="p-4 text-left">{translate('name')}</th>
+                    <th className="p-4 text-left">{translate('email')}</th>
+                    <th className="p-4 text-left">{translate('permissions')}</th>
+                    <th className="p-4 text-center">{translate('actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teamMembers.map((member) => (
+                    <tr key={member.id} className="border-t hover:bg-gray-50">
+                      <td className="p-4">
+                        <div className="flex items-center justify-center">
+                          {getAvatarOrInitial(member)}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</span>
+                          <span className="text-sm text-gray-500">{member.Users.email}</span>
+                        </div>
+                      </td>
+                      <td className="p-4">{member.Users.email}</td>
+                      <td className="p-4">
+                        <div className="flex flex-wrap">
+                          {renderPermissionsList(member.BusinessTeam_Permissions)}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex justify-center items-center space-x-3">
+                          {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && (
+                            <button
+                              onClick={() => openPermissionsDialog(member)}
+                              className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
+                              title="Edit permissions"
+                            >
+                              <FaEdit className="w-5 h-5" />
+                            </button>
+                          )}
+                          {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && (
+                            <button
+                              onClick={() => {
+                                setMemberToDelete(member);
+                                setShowDeleteConfirmDialog(true);
+                              }}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
+                              title="Delete member"
+                            >
+                              <FaTrashAlt className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
               {teamMembers.map((member) => (
-                <tr key={member.id} className="border-t hover:bg-gray-50">
-                  <td className="p-4">
-                    <div className="flex items-center justify-center">
-                      {getAvatarOrInitial(member)}
+                <div key={member.id} className={cardStyles.base}>
+                  <div className={cardStyles.header}>
+                    {getAvatarOrInitial(member)}
+                    <div>
+                      <h4 className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</h4>
+                      <p className="text-sm text-gray-500">{member.Users.email}</p>
                     </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</span>
-                      <span className="text-sm text-gray-500">{member.Users.email}</span>
+                  </div>
+                  
+                  <div className={cardStyles.content}>
+                    <div>
+                      <p className={cardStyles.label}>{translate('permissions')}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {renderPermissionsList(member.BusinessTeam_Permissions)}
+                      </div>
                     </div>
-                  </td>
-                  <td className="p-4">{member.Users.email}</td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap">
-                      {renderPermissionsList(member.BusinessTeam_Permissions)}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex justify-center items-center space-x-3">
-                      {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && (
-                        <button
-                          onClick={() => openPermissionsDialog(member)}
-                          className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
-                          title="Edit permissions"
-                        >
-                          <FaEdit className="w-5 h-5" />
-                        </button>
-                      )}
-                      {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && (
-                        <button
-                          onClick={() => {
-                            setMemberToDelete(member);
-                            setShowDeleteConfirmDialog(true);
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
-                          title="Delete member"
-                        >
-                          <FaTrashAlt className="w-5 h-5" />
-                        </button>
-                      )}
-                      {member.userId === currentUserId && (
-                        <span className="text-sm text-gray-500 italic">
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                  </div>
+
+                  <div className={cardStyles.actions}>
+                    {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && (
+                      <button
+                        onClick={() => openPermissionsDialog(member)}
+                        className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
+                        title="Edit permissions"
+                      >
+                        <FaEdit className="w-5 h-5" />
+                      </button>
+                    )}
+                    {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && (
+                      <button
+                        onClick={() => {
+                          setMemberToDelete(member);
+                          setShowDeleteConfirmDialog(true);
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
+                        title="Delete member"
+                      >
+                        <FaTrashAlt className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         ) : (
           <div className="text-center py-12">
             <svg 
@@ -703,63 +762,119 @@ const Teams = () => {
         )}
       </div>
 
-      {/* Add Pending Invites Table */}
-      <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto mt-6">
+      {/* Replace the Pending Invites Table section with this: */}
+      <div className="bg-white p-6 rounded-lg shadow-md mt-6">
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">
           {translate('pendingInvites')} ({pendingInvites.length})
         </h3>
         {loading ? (
           <p>{translate('loading')}</p>
         ) : pendingInvites.length > 0 ? (
-          <table className="min-w-full table-auto">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-4 text-left">{translate('email')}</th>
-                <th className="p-4 text-left">{translate('invitedAt')}</th>
-                <th className="p-4 text-left">{translate('permissions')}</th>
-                <th className="p-4 text-center">{translate('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingInvites.map((invite) => (
-                <tr key={invite.token} className="border-t hover:bg-gray-50">
-                  <td className="p-4">{invite.email}</td>
-                  <td className="p-4">
-                    {new Date(invite.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-2">
-                      {invite.permissions?.map((permId) => {
-                        const permission = permissionsList.find(p => p.id === permId);
-                        return permission ? (
-                          <span
-                            key={permId}
-                            className="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm font-semibold text-gray-700"
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full table-auto">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-4 text-left">{translate('email')}</th>
+                    <th className="p-4 text-left">{translate('invitedAt')}</th>
+                    <th className="p-4 text-left">{translate('permissions')}</th>
+                    <th className="p-4 text-center">{translate('actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingInvites.map((invite) => (
+                    <tr key={invite.token} className="border-t hover:bg-gray-50">
+                      <td className="p-4">{invite.email}</td>
+                      <td className="p-4">
+                        {new Date(invite.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-wrap gap-2">
+                          {invite.permissions?.map((permId) => {
+                            const permission = permissionsList.find(p => p.id === permId);
+                            return permission ? (
+                              <span
+                                key={permId}
+                                className="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm font-semibold text-gray-700"
+                              >
+                                {permission.permission}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex justify-center items-center space-x-3">
+                          <button
+                            onClick={() => {
+                              setInviteToDelete(invite);
+                              setShowDeleteInviteDialog(true);
+                            }}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
+                            title={translate('deleteInvite')}
                           >
-                            {permission.permission}
-                          </span>
-                        ) : null;
-                      })}
+                            <FaTrashAlt className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {pendingInvites.map((invite) => (
+                <div key={invite.token} className={cardStyles.base}>
+                  <div className={cardStyles.content}>
+                    <div>
+                      <p className={cardStyles.label}>{translate('email')}</p>
+                      <p className={cardStyles.value}>{invite.email}</p>
                     </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex justify-center items-center space-x-3">
-                      <button
-                        onClick={() => {
-                          setInviteToDelete(invite);
-                          setShowDeleteInviteDialog(true);
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
-                        title={translate('deleteInvite')}
-                      >
-                        <FaTrashAlt className="w-5 h-5" />
-                      </button>
+                    
+                    <div>
+                      <p className={cardStyles.label}>{translate('invitedAt')}</p>
+                      <p className={cardStyles.value}>
+                        {new Date(invite.created_at).toLocaleDateString()}
+                      </p>
                     </div>
-                  </td>
-                </tr>
+
+                    <div>
+                      <p className={cardStyles.label}>{translate('permissions')}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {invite.permissions?.map((permId) => {
+                          const permission = permissionsList.find(p => p.id === permId);
+                          return permission ? (
+                            <span
+                              key={permId}
+                              className="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm font-semibold text-gray-700"
+                            >
+                              {permission.permission}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={cardStyles.actions}>
+                    <button
+                      onClick={() => {
+                        setInviteToDelete(invite);
+                        setShowDeleteInviteDialog(true);
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
+                      title={translate('deleteInvite')}
+                    >
+                      <FaTrashAlt className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         ) : (
           <div className="text-center py-12">
             <svg 

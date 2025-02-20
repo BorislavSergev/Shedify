@@ -8,7 +8,6 @@ const Offers = () => {
   const [offers, setOffers] = useState([]);
   const [services, setServices] = useState([]);
   const [newOffer, setNewOffer] = useState({
-    description: '',
     offer_type: '',
     discount_percentage: null,
     fixed_price: null,
@@ -105,7 +104,7 @@ const Offers = () => {
       setOffers(offersWithServiceNames);
     } catch (err) {
       console.error('Error fetching offers:', err);
-      setError('Failed to load offers');
+      setError('failedToLoadOffers');
     } finally {
       setLoading(false);
     }
@@ -143,7 +142,7 @@ const Offers = () => {
       setServices(data);
     } catch (err) {
       console.error('Error fetching services:', err);
-      setError('Failed to load services');
+      setError('failedToLoadServices');
     }
   };
 
@@ -194,7 +193,7 @@ const Offers = () => {
 
     } catch (err) {
       console.error('Error fetching offer limits and count:', err);
-      setError('Failed to fetch offer limits and count');
+      setError('failedToFetchOfferLimitsAndCount');
     }
   };
 
@@ -233,12 +232,11 @@ const Offers = () => {
   // Create a new offer
   const createOffer = async () => {
     if (isOfferLimitReached) {
-      setError('You have reached the maximum number of offers allowed. Please upgrade your plan.');
+      setError('upgradePlanRequired');
       return;
     }
 
     const {
-      description,
       offer_type,
       discount_percentage,
       fixed_price,
@@ -250,22 +248,22 @@ const Offers = () => {
     const teamMemberId = await BusinessTeamIdTeamMember;
 
     if (!teamMemberId) {
-      setError('Team member ID not found.');
+      setError('teamMemberIdNotFound');
       return;
     }
 
-    if (!description || !offer_type || !start_time || !end_time || !service_id || !teamMemberId) {
-      setError('All required fields must be filled');
+    if (!offer_type || !start_time || !end_time || !service_id || !teamMemberId) {
+      setError('allFieldsRequired');
       return;
     }
 
     if (offer_type === 'discount' && !discount_percentage) {
-      setError('Discount percentage is required for discount offers');
+      setError('discountPercentageRequired');
       return;
     }
 
     if (offer_type === 'fixed' && !fixed_price) {
-      setError('Fixed price is required for fixed price offers');
+      setError('fixedPriceRequired');
       return;
     }
 
@@ -287,7 +285,6 @@ const Offers = () => {
       fetchOfferLimitsAndCount(); // Refresh the offer count after creating a new offer
 
       setNewOffer({
-        description: '',
         offer_type: '',
         discount_percentage: null,
         fixed_price: null,
@@ -302,7 +299,7 @@ const Offers = () => {
       setError('');
     } catch (err) {
       console.error('Error creating offer:', err);
-      setError(err.message);
+      setError('failedToCreateOffer');
     } finally {
       setLoading(false);
     }
@@ -323,7 +320,6 @@ const Offers = () => {
   // Save the edited offer
   const saveEditedOffer = async () => {
     const { 
-      description, 
       offer_type, 
       discount_percentage, 
       fixed_price, 
@@ -336,22 +332,22 @@ const Offers = () => {
     const teamMemberId = await BusinessTeamIdTeamMember;
 
     if (!teamMemberId) {
-      setError('Team member ID not found.');
+      setError('teamMemberIdNotFound');
       return;
     }
 
-    if (!description || !offer_type || !start_time || !end_time || !service_id || !teamMemberId) {
-      setError('All required fields must be filled');
+    if (!offer_type || !start_time || !end_time || !service_id || !teamMemberId) {
+      setError('allFieldsRequired');
       return;
     }
 
     if (offer_type === 'discount' && !discount_percentage) {
-      setError('Discount percentage is required for discount offers');
+      setError('discountPercentageRequired');
       return;
     }
 
     if (offer_type === 'fixed' && !fixed_price) {
-      setError('Fixed price is required for fixed price offers');
+      setError('fixedPriceRequired');
       return;
     }
 
@@ -360,7 +356,6 @@ const Offers = () => {
 
       // Create a clean object with only the fields that exist in the database
       const offerData = {
-        description,
         offer_type,
         discount_percentage: offer_type === 'discount' ? discount_percentage : null,
         fixed_price: offer_type === 'fixed' ? fixed_price : null,
@@ -381,7 +376,6 @@ const Offers = () => {
       fetchOffers();
 
       setNewOffer({
-        description: '',
         offer_type: '',
         discount_percentage: null,
         fixed_price: null,
@@ -397,7 +391,7 @@ const Offers = () => {
       setError('');
     } catch (err) {
       console.error('Error saving edited offer:', err);
-      setError(err.message);
+      setError('failedToSaveEditedOffer');
     } finally {
       setLoading(false);
     }
@@ -415,7 +409,7 @@ const Offers = () => {
       setShowDeleteConfirmDialog(false);
     } catch (err) {
       console.error('Error deleting offer:', err);
-      setError('Failed to delete offer');
+      setError('failedToDeleteOffer');
     } finally {
       setLoading(false);
     }
@@ -426,9 +420,9 @@ const Offers = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-4xl font-bold text-accent">{translate('manageOffers')}</h2>
+            <h2 className="text-2xl md:text-4xl font-bold text-accent">{translate('manageOffers')}</h2>
             {!loadingAction && (
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm md:text-base text-gray-600 mt-2">
                 {offerLimitPerMember === -1 
                   ? `${translate('currentOffers')}: ${userOffersCount} (${translate('unlimited')})`
                   : `${translate('currentOffers')}: ${userOffersCount} / ${offerLimitPerMember}`
@@ -442,13 +436,11 @@ const Offers = () => {
                 window.location.href = "/dashboard/subscription";
               } else if (services.length === 0) {
                 setError(translate('addServicesFirst'));
-                // Optionally, you could redirect to the services page
-                // window.location.href = "/dashboard/services";
               } else {
                 setShowForm(!showForm);
               }
             }}
-            className={`px-6 py-3 rounded-lg shadow-lg transform transition-all duration-200 flex items-center space-x-2
+            className={`px-3 py-2 md:px-6 md:py-3 text-sm md:text-base rounded-lg shadow-lg transform transition-all duration-200 flex items-center space-x-2
               ${isOfferLimitReached || loadingAction || services.length === 0
                 ? "bg-gray-400 hover:bg-gray-500" 
                 : "bg-accent hover:bg-accent-dark hover:-translate-y-0.5"
@@ -456,7 +448,7 @@ const Offers = () => {
           >
             {loadingAction ? (
               <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 md:h-5 md:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -480,7 +472,7 @@ const Offers = () => {
         {error && (
           <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
             <p className="font-medium">{translate('error')}</p>
-            <p>{error}</p>
+            <p>{translate(error)}</p>
           </div>
         )}
 
@@ -504,18 +496,6 @@ const Offers = () => {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
                       placeholder={translate('enterOfferTitle')}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{translate('description')}</label>
-                    <textarea
-                      name="description"
-                      value={newOffer.description}
-                      onChange={handleInputChange}
-                      rows="3"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-                      placeholder={translate('enterOfferDescription')}
                     />
                   </div>
                 </div>
@@ -711,80 +691,182 @@ const Offers = () => {
                 </button>
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{translate('title')}</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{translate('description')}</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{translate('offerType')}</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{translate('service')}</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{translate('duration')}</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{translate('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+              <div className="min-w-full">
+                {/* Mobile view - card layout */}
+                <div className="md:hidden space-y-3 px-2">
                   {currentOffers.map((offer) => (
-                    <tr key={offer.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{offer.title}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-500">{offer.description}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                          ${offer.offer_type === 'discount' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {offer.offer_type === 'discount' 
-                            ? `${offer.discount_percentage}% ${translate('discount')}`
-                            : `${offer.fixed_price} лв. ${translate('fixedPrice')}`
-                          }
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{offer.service_name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          <div>{new Date(offer.start_time).toLocaleDateString()}</div>
-                          <div className="text-xs">{translate('to')}</div>
-                          <div>{new Date(offer.end_time).toLocaleDateString()}</div>
+                    <div key={offer.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                      {/* Header section */}
+                      <div className="bg-gray-50 p-3 border-b border-gray-100">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-medium text-base text-gray-900 truncate pr-2">
+                            {offer.title}
+                          </h3>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium
+                            ${offer.offer_type === 'discount' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {offer.offer_type === 'discount' 
+                              ? `${offer.discount_percentage}%` 
+                              : `${offer.fixed_price} лв.`
+                            }
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      </div>
+
+                      {/* Content section */}
+                      <div className="p-3 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-900">{offer.service_name}</span>
+                        </div>
+
+                        <div className="flex items-center text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900">
+                              {new Date(offer.start_time).toLocaleDateString()}
+                            </span>
+                            <span className="text-xs text-gray-500">{translate('to')}</span>
+                            <span className="text-gray-900">
+                              {new Date(offer.end_time).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions section */}
+                      <div className="border-t border-gray-100 p-2 bg-gray-50 flex justify-end space-x-2">
                         <button
                           onClick={() => editExistingOffer(offer)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent mr-2"
+                          className="flex items-center px-3 py-1.5 rounded-md bg-accent text-white text-xs font-medium transition-colors duration-150 hover:bg-accent-dark"
                         >
-                          <FaEdit className="mr-1" /> {translate('edit')}
+                          <FaEdit className="mr-1 h-3 w-3" />
+                          {translate('edit')}
                         </button>
                         <button
                           onClick={() => {
                             setOfferToDelete(offer);
                             setShowDeleteConfirmDialog(true);
                           }}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="flex items-center px-3 py-1.5 rounded-md bg-red-500 text-white text-xs font-medium transition-colors duration-150 hover:bg-red-600"
                         >
-                          <FaTrashAlt className="mr-1" /> {translate('delete')}
+                          <FaTrashAlt className="mr-1 h-3 w-3" />
+                          {translate('delete')}
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                </div>
 
-          {/* Pagination */}
-          <div className="flex justify-center my-6 pb-6">
-            {Array.from({ length: Math.ceil(offers.length / offersPerPage) }, (_, index) => (
-              <button
-                key={index + 1}
-                onClick={() => paginate(index + 1)}
-                className={`mx-1 px-4 py-2 rounded-lg ${currentPage === index + 1 ? 'bg-accent text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                {index + 1}
-              </button>
-            ))}
+                {/* Desktop view - table layout */}
+                <div className="hidden md:block">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                          {translate('title')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                          {translate('offerType')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                          {translate('service')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                          {translate('duration')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                          {translate('actions')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {currentOffers.map((offer) => (
+                        <tr key={offer.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                              {offer.title}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full
+                              ${offer.offer_type === 'discount' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {offer.offer_type === 'discount' 
+                                ? `${offer.discount_percentage}%` 
+                                : `${offer.fixed_price} лв.`
+                              }
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900 truncate max-w-xs">
+                              {offer.service_name}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">
+                              {new Date(offer.start_time).toLocaleDateString()}
+                              <span className="text-gray-400 mx-1">→</span>
+                              {new Date(offer.end_time).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => editExistingOffer(offer)}
+                                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                              >
+                                <FaEdit className="mr-1 h-3 w-3" />
+                                {translate('edit')}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setOfferToDelete(offer);
+                                  setShowDeleteConfirmDialog(true);
+                                }}
+                                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              >
+                                <FaTrashAlt className="mr-1 h-3 w-3" />
+                                {translate('delete')}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-center mt-4 px-4 pb-4">
+                  <div className="inline-flex rounded-md shadow-sm">
+                    {Array.from({ length: Math.ceil(offers.length / offersPerPage) }, (_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => paginate(index + 1)}
+                        className={`
+                          relative inline-flex items-center px-3 py-1.5
+                          ${index === 0 ? 'rounded-l-md' : ''}
+                          ${index === Math.ceil(offers.length / offersPerPage) - 1 ? 'rounded-r-md' : ''}
+                          ${currentPage === index + 1 
+                            ? 'z-10 bg-accent text-white' 
+                            : 'bg-white text-gray-500 hover:bg-gray-50'
+                          }
+                          text-xs font-medium border border-gray-300
+                          focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent
+                        `}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -818,7 +900,7 @@ const Offers = () => {
         {error && (
           <div className="fixed bottom-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg">
             <p className="font-bold">{translate('error')}</p>
-            <p>{error}</p>
+            <p>{translate(error)}</p>
           </div>
         )}
       </div>

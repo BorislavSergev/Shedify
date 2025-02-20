@@ -24,11 +24,6 @@ const MyProfile = () => {
     newPassword: '',
     confirmPassword: '',
   });
-  const [reservations, setReservations] = useState({
-    upcoming: [],
-    today: [],
-    past: []
-  });
 
   // Fetch user profile details from Users table on mount
   useEffect(() => {
@@ -59,67 +54,6 @@ const MyProfile = () => {
     };
 
     fetchUserData();
-  }, []);
-
-  // Add this useEffect to fetch reservations
-  useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: businessTeam, error: businessTeamError } = await supabase
-          .from('BusinessTeam')
-          .select('id')
-          .eq('userId', user.id)
-          .single();
-
-        if (businessTeamError) throw businessTeamError;
-
-        const { data, error } = await supabase
-          .from('Reservations')
-          .select(`
-            *,
-            BusinessTeam (
-              Users (
-                first_name,
-                last_name
-              )
-            )
-          `)
-          .eq('employeeId', businessTeam.id)
-          .order('reservationAt', { ascending: true });
-
-        if (error) throw error;
-
-        const now = new Date();
-        const today = new Date(now.setHours(0, 0, 0, 0));
-
-        const organized = {
-          upcoming: [],
-          today: [],
-          past: []
-        };
-
-        data.forEach(reservation => {
-          const reservationDate = new Date(reservation.reservationAt);
-          if (reservationDate < today) {
-            organized.past.push(reservation);
-          } else if (reservationDate.toDateString() === today.toDateString()) {
-            organized.today.push(reservation);
-          } else {
-            organized.upcoming.push(reservation);
-          }
-        });
-
-        setReservations(organized);
-      } catch (error) {
-        console.error('Error fetching reservations:', error);
-        setError(error.message);
-      }
-    };
-
-    fetchReservations();
   }, []);
 
   const handleAvatarChange = (e) => {
@@ -435,43 +369,6 @@ const MyProfile = () => {
         </div>
       </div>
 
-      {/* Reservations Section */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">{translate('upcomingReservations')}</h2>
-        </div>
-        <div className="p-6">
-          {/* Today's Reservations */}
-          {reservations.today.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">{translate('today')}</h3>
-              <div className="space-y-3">
-                {reservations.today.map(reservation => (
-                  <ReservationCard key={reservation.id} reservation={reservation} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Upcoming Reservations */}
-          {reservations.upcoming.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">{translate('upcoming')}</h3>
-              <div className="space-y-3">
-                {reservations.upcoming.map(reservation => (
-                  <ReservationCard key={reservation.id} reservation={reservation} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* No Reservations Message */}
-          {reservations.today.length === 0 && reservations.upcoming.length === 0 && (
-            <p className="text-gray-500 text-center py-4">{translate('noUpcomingReservations')}</p>
-          )}
-        </div>
-      </div>
-
       {/* Delete Account Modal */}
       <Transition appear show={isDeleteModalOpen} as={Fragment}>
         <Dialog
@@ -569,39 +466,6 @@ const MyProfile = () => {
         >
           {loading ? translate('saving') : translate('saveChanges')}
         </button>
-      </div>
-    </div>
-  );
-};
-
-// Reservation Card Component
-const ReservationCard = ({ reservation }) => {
-  const { translate } = useLanguage();
-  
-  return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
-      <div>
-        <h3 className="font-medium text-gray-900">
-          {reservation.firstName} {reservation.lastName}
-        </h3>
-        <div className="text-sm text-gray-500 space-y-1 mt-1">
-          <p className="flex items-center">
-            <span className="mr-2">📅</span>
-            {format(new Date(reservation.reservationAt), "PPp")}
-          </p>
-          <p className="flex items-center">
-            <span className="mr-2">⏱️</span>
-            {translate('duration')}: {reservation.timeToMake} {translate('minutes')}
-          </p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="text-sm font-medium text-gray-900">
-          {translate('assignedTo')}: {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
-        </p>
-        <p className="text-sm text-gray-500 mt-1">
-          {Array.isArray(reservation.services) && reservation.services.join(", ")}
-        </p>
       </div>
     </div>
   );

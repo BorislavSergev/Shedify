@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import supabase from "../hooks/supabase"; // Adjust the path if necessary
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const Register = () => {
   const [isBusinessInvite, setIsBusinessInvite] = useState(false);
   const [inviteBusiness, setInviteBusiness] = useState(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -253,68 +255,40 @@ const Register = () => {
               required
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-6 relative">
             <label className="block text-sm font-medium mb-2" htmlFor="password">
               Парола
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Въведете вашата парола"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Въведете вашата парола"
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"
-            className={`w-full py-2 rounded-md text-white ${
-              loading ? "bg-gray-400 cursor-not-allowed" : "bg-accent hover:bg-accentHover"
+            className={`w-full bg-accent text-white py-2 px-4 rounded-md hover:bg-accent/90 transition-colors ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
             disabled={loading}
           >
-            {loading ? "Регистриране..." : "Регистрирай се"}
+            {loading ? "Регистрация..." : "Регистрирай се"}
           </button>
-          
-          <div className="text-center mt-4">
-            <p className="text-gray-600">
-              Вече имате акаунт?{" "}
-              <a href="/login" className="text-accent hover:text-accentHover">
-                Влезте тук
-              </a>
-            </p>
-          </div>
         </form>
-
-        {/* Add Invitation Dialog */}
-        {showInviteDialog && inviteBusiness && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h2 className="text-xl font-semibold mb-4">
-                Бизнес покана
-              </h2>
-              <p className="mb-6">
-                Поканени сте да се присъедините към {inviteBusiness.name}. Желаете ли да приемете тази покана?
-              </p>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={handleDeclineInvite}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Откажи
-                </button>
-                <button
-                  onClick={handleAcceptInvite}
-                  className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
-                >
-                  Приеми
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
