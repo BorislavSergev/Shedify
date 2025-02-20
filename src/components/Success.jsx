@@ -16,12 +16,33 @@ const Success = () => {
   const maxRetries = 3;
   const retryDelay = 2000; // 2 seconds
 
+  // Enhanced translation helper with better fallback handling
+  const t = (key) => {
+    // Default to English if currentLanguage is not available
+    const lang = currentLanguage || 'bg';
+    
+    // First try the current language
+    if (translations[lang]?.[key]) {
+      return translations[lang][key];
+    }
+    
+    // Fallback to English
+    if (translations.en?.[key]) {
+      return translations.en[key];
+    }
+    
+    // If all else fails, return the key itself
+    console.warn(`Missing translation for key: ${key}`);
+    return key;
+  };
+
   const selectedBusiness = useMemo(() => {
     try {
-      return JSON.parse(localStorage.getItem('selectedBusiness')) || {};
+      const business = localStorage.getItem('selectedBusiness');
+      return business ? JSON.parse(business) : null;
     } catch (error) {
       console.error('Invalid business data in local storage', error);
-      return {};
+      return null;
     }
   }, []);
 
@@ -39,7 +60,7 @@ const Success = () => {
       if (updateError) throw updateError;
     } catch (err) {
       console.error('Error updating business plan:', err);
-      throw new Error(translations[currentLanguage].errorUpdatingPlan);
+      throw new Error(t('errorUpdatingPlan'));
     }
   };
 
@@ -47,6 +68,11 @@ const Success = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Validate business selection first
+      if (!selectedBusiness?.id) {
+        throw new Error(t('noPlanOrBusiness'));
+      }
 
       const response = await fetch(`https://stripe.swiftabook.com/api/checkout-session/${sessionId}`, {
         method: 'GET',
@@ -57,17 +83,13 @@ const Success = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`${t('httpError')}: ${response.status}`);
       }
 
       const data = await response.json();
       
       if (data.error) {
-        throw new Error(data.error.message || translations[currentLanguage].errorProcessingPayment);
-      }
-
-      if (data.payment_status !== 'paid' || data.status !== 'complete') {
-        throw new Error(translations[currentLanguage].paymentIncomplete);
+        throw new Error(data.error.message || t('errorProcessingPayment'));
       }
 
       setSubscriptionInfo(data);
@@ -76,15 +98,16 @@ const Success = () => {
       const parsedSubscription = subscription ? JSON.parse(subscription) : null;
       setPlanName(parsedSubscription);
 
-      if (parsedSubscription && selectedBusiness.id) {
-        if (data.customer) {
-          await updateBusinessPlan(parsedSubscription.id, data.customer);
-        } else {
-          throw new Error(translations[currentLanguage].missingCustomerInfo);
-        }
-      } else {
-        throw new Error(translations[currentLanguage].noPlanOrBusiness);
+      if (!parsedSubscription) {
+        throw new Error(t('noSubscriptionData'));
       }
+
+      if (data.customer) {
+        await updateBusinessPlan(parsedSubscription.id, data.customer);
+      } else {
+        throw new Error(t('missingCustomerInfo'));
+      }
+
     } catch (err) {
       console.error('Error fetching session:', err);
       if (retryCount < maxRetries) {
@@ -92,7 +115,7 @@ const Success = () => {
           setRetryCount(prev => prev + 1);
         }, retryDelay * Math.pow(2, retryCount));
       } else {
-        setError(err.message || translations[currentLanguage].errorLoadingSubscription);
+        setError(err.message || t('errorLoadingSubscription'));
       }
     } finally {
       setLoading(false);
@@ -103,12 +126,13 @@ const Success = () => {
     const queryParams = new URLSearchParams(location.search);
     const sessionId = queryParams.get('session_id');
 
-    if (sessionId) {
-      fetchSessionData(sessionId);
-    } else {
-      setError(translations[currentLanguage].noSessionId);
+    if (!sessionId) {
+      setError(t('noSessionId'));
       setLoading(false);
+      return;
     }
+
+    fetchSessionData(sessionId);
   }, [location, retryCount]);
 
   const handleRetry = () => {
@@ -118,14 +142,6 @@ const Success = () => {
     if (sessionId) {
       fetchSessionData(sessionId);
     }
-  };
-
-  // Add translation helper function with fallbacks
-  const t = (key) => {
-    if (!translations[currentLanguage]) {
-      return translations.en?.[key] || key;
-    }
-    return translations[currentLanguage][key] || translations.en?.[key] || key;
   };
 
   if (loading) {
