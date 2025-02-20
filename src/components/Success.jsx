@@ -53,7 +53,6 @@ const Success = () => {
         .update({
           planId: planId,
           stripe_customer_id: stripeCustomerId,
-          updated_at: new Date().toISOString()
         })
         .eq('id', selectedBusiness.id);
 
