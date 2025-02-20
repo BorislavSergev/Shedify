@@ -92,17 +92,37 @@ const Plans = () => {
           throw new Error('Selected plan not found');
         }
 
+        // Log before saving to localStorage
+        console.log('Saving plan to localStorage:', {
+          id: selectedPlan.id,
+          name: selectedPlan.plan_name,
+          price: selectedPlan.price,
+          stripePriceId: selectedPlan.stripe_price_id
+        });
+
+        // Save to localStorage
         localStorage.setItem('subscription', JSON.stringify({
           id: selectedPlan.id,
           name: selectedPlan.plan_name,
           price: selectedPlan.price,
           stripePriceId: selectedPlan.stripe_price_id
         }));
+
+        // Verify the data was saved correctly
+        const savedData = localStorage.getItem('subscription');
+        console.log('Verified localStorage data:', {
+          raw: savedData,
+          parsed: JSON.parse(savedData)
+        });
         
         // Disable the button while loading
         const button = document.querySelector(`button[data-plan-id="${planId}"]`);
         if (button) button.disabled = true;
         
+        // Wait a moment to ensure localStorage is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Proceed with checkout
         await handleCheckout(stripePriceId);
       }
     } catch (error) {
