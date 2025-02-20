@@ -37,66 +37,80 @@ const CreateBusiness = () => {
       if (userError) throw new Error("Authentication failed. Please log in again.");
       if (!user || !user.id) throw new Error("No authenticated user found. Please log in.");
 
-      // First, check if the Default theme exists
+      // First, ensure the Default theme exists
       const { data: themeData, error: themeError } = await supabase
         .from("Themes")
-        .select("name")
+        .select("*")
         .eq("name", "Default")
         .single();
 
+      console.log("Theme check result:", themeData, themeError);
+
       if (themeError || !themeData) {
-        console.error('Theme Error:', themeError);
         // Create the Default theme if it doesn't exist
-        const { error: createThemeError } = await supabase
+        const { data: newTheme, error: createThemeError } = await supabase
           .from("Themes")
-          .insert([{ name: "Default", description: "Default theme" }]);
-        
-        if (createThemeError) throw new Error("Failed to create default theme");
+          .insert([{
+            name: "Default",
+            description: "Default theme"
+          }])
+          .select()
+          .single();
+
+        if (createThemeError) {
+          console.error('Theme Creation Error:', createThemeError);
+          throw new Error("Failed to create default theme");
+        }
+        console.log("Created new theme:", newTheme);
       }
 
-      // Log the data we're about to insert
-      console.log('Attempting to create business with:', {
+      // Prepare the business data
+      const businessData = {
         name: formData.name.trim(),
         owner_id: user.id,
         type: "Other",
         visibility: false,
         theme: "Default",
-        themeData: defaultThemeData,
-        language: "bg"
-      });
+        "themeData": defaultThemeData, // Using quotes to ensure exact column name match
+        language: "bg",
+        free_trial: false
+      };
+
+      console.log("Attempting to create business with data:", businessData);
 
       // Create the business
-      const { data: businessData, error: businessError } = await supabase
+      const { data: createdBusiness, error: businessError } = await supabase
         .from("Business")
-        .insert({
-          name: formData.name.trim(),
-          owner_id: user.id,
-          type: "Other",
-          visibility: false,
-          theme: "Default",
-          themeData: defaultThemeData, // Using the raw object, Supabase will handle JSON conversion
-          language: "bg"
-        })
-        .select('*') // Select all fields to verify what was saved
+        .insert([businessData])
+        .select(`
+          id,
+          name,
+          owner_id,
+          type,
+          visibility,
+          theme,
+          "themeData",
+          language,
+          free_trial
+        `)
         .single();
-      
+
       if (businessError) {
         console.error('Business Creation Error:', businessError);
         throw new Error(businessError.message);
       }
 
-      // Log the created business data
-      console.log('Created business:', businessData);
+      console.log("Created business:", createdBusiness);
 
-      if (!businessData || !businessData.id) {
-        throw new Error("Failed to create business");
+      if (!createdBusiness.theme || !createdBusiness.themeData) {
+        console.error('Theme or themeData is null in created business');
       }
 
       // Add user to BusinessTeam
       const { error: businessTeamError } = await supabase
         .from("BusinessTeam")
         .insert([{
-          business_id: businessData.id,
+          business_id: createdBusiness.id,
           user_id: user.id,
         }])
         .select();
@@ -105,8 +119,7 @@ const CreateBusiness = () => {
         console.error('BusinessTeam Error:', businessTeamError);
         throw new Error(businessTeamError.message);
       }
-
-      navigate("/dashboard");
+      
     } catch (error) {
       console.error('Error:', error);
       setError(error.message);
