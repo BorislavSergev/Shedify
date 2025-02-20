@@ -79,12 +79,12 @@ const CreateBusiness = () => {
         .from("Business")
         .insert([{
           name: formData.name,
-          type:  "Other",
+          type: "Other",
           owner_id: user.id,
           visibility: false,
           theme: "default",  // Reference to Themes table
           themeData: defaultThemeData,  // Store theme data directly in Business table
-          language: "bg"  // Default language
+          language: "bg",  // Default language
         }])
         .select()
         .single();
