@@ -94,6 +94,38 @@ const Success = () => {
       setLoading(true);
       setError(null);
 
+      // Add detailed debugging logs
+      console.log('Debug information:');
+      console.log('1. Subscription data:', {
+        raw: localStorage.getItem('subscription'),
+        parsed: JSON.parse(localStorage.getItem('subscription') || 'null')
+      });
+      console.log('2. Selected business:', {
+        raw: localStorage.getItem('selectedBusiness'),
+        parsed: JSON.parse(localStorage.getItem('selectedBusiness') || 'null'),
+        memo: selectedBusiness
+      });
+
+      // Add validation for required data before making the API call
+      const subscription = localStorage.getItem('subscription');
+      const parsedSubscription = subscription ? JSON.parse(subscription) : null;
+      
+      if (!parsedSubscription) {
+        console.error('Missing subscription data:', {
+          subscription,
+          parsedSubscription
+        });
+        throw new Error(t('noPlanSelected'));
+      }
+
+      if (!selectedBusiness?.id) {
+        console.error('Missing business data:', {
+          selectedBusiness,
+          localStorage: localStorage.getItem('selectedBusiness')
+        });
+        throw new Error(t('noBusinessSelected'));
+      }
+
       const response = await fetch(`https://stripe.swiftabook.com/api/checkout-session/${sessionId}`, {
         method: 'GET',
         headers: {
@@ -118,26 +150,26 @@ const Success = () => {
       }
 
       setSubscriptionInfo(data);
-      
-      const subscription = localStorage.getItem('subscription');
-      const parsedSubscription = subscription ? JSON.parse(subscription) : null;
       setPlanName(parsedSubscription);
 
-      if (parsedSubscription && selectedBusiness?.id) {
-        if (data.customer && data.subscription) {
-          await updateBusinessPlan(
-            parsedSubscription.id, 
-            data.customer,
-            data.subscription
-          );
-        } else {
-          throw new Error(t('missingSubscriptionInfo'));
-        }
+      if (data.customer && data.subscription) {
+        await updateBusinessPlan(
+          parsedSubscription.id, 
+          data.customer,
+          data.subscription
+        );
       } else {
-        throw new Error(t('noPlanOrBusiness'));
+        throw new Error(t('missingSubscriptionInfo'));
       }
     } catch (err) {
-      console.error('Error fetching session:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        localStorage: {
+          subscription: localStorage.getItem('subscription'),
+          selectedBusiness: localStorage.getItem('selectedBusiness')
+        }
+      });
       setError(err.message || t('errorLoadingSubscription'));
     } finally {
       setLoading(false);
