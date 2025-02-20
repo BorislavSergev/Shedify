@@ -419,6 +419,11 @@ export const translations = {
     viewReservationStats: "Виж статистика",
     viewBusinessStats: "Виж бизнес статистика",
     lastUpdated: "Последно обновено",
+    subscriptionSuccessful: "Успешен абонамент!",
+    subscriptionInformation: "Информация за абонамента",
+    backToDashboard: "Обратно към таблото",
+    noSubscriptionInformation: "Няма налична информация за абонамента.",
+    errorLoadingSubscription: "Грешка при зареждане на детайлите за абонамента",
   },
   en: {
     // Navigation
@@ -799,5 +804,10 @@ export const translations = {
     viewReservationStats: "View Stats",
     viewBusinessStats: "View Business Stats",
     lastUpdated: "Last Updated",
+    subscriptionSuccessful: "Subscription Successful!",
+    subscriptionInformation: "Subscription Information",
+    backToDashboard: "Back to Dashboard",
+    noSubscriptionInformation: "No subscription information available.",
+    errorLoadingSubscription: "Failed to load subscription details",
   }
 }
