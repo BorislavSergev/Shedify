@@ -63,15 +63,19 @@ const Success = () => {
     }
   };
 
+  const formatAmount = (amount, currency) => {
+    const formatter = new Intl.NumberFormat('bg-BG', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+      minimumFractionDigits: 2,
+    });
+    return formatter.format(amount / 100);
+  };
+
   const fetchSessionData = async (sessionId) => {
     try {
       setLoading(true);
       setError(null);
-
-      // Validate business selection first
-      if (!selectedBusiness?.id) {
-        throw new Error(t('noPlanOrBusiness'));
-      }
 
       const response = await fetch(`https://stripe.swiftabook.com/api/checkout-session/${sessionId}`, {
         method: 'GET',
@@ -91,31 +95,25 @@ const Success = () => {
         throw new Error(data.error.message || t('errorProcessingPayment'));
       }
 
+      // Validate payment status
+      if (data.payment_status !== 'paid' || data.status !== 'complete') {
+        throw new Error(t('paymentIncomplete'));
+      }
+
       setSubscriptionInfo(data);
       
       const subscription = localStorage.getItem('subscription');
       const parsedSubscription = subscription ? JSON.parse(subscription) : null;
       setPlanName(parsedSubscription);
 
-      if (!parsedSubscription) {
-        throw new Error(t('noSubscriptionData'));
+      if (parsedSubscription && selectedBusiness.id) {
+        if (data.customer) {
+          await updateBusinessPlan(parsedSubscription.id, data.customer);
+        }
       }
-
-      if (data.customer) {
-        await updateBusinessPlan(parsedSubscription.id, data.customer);
-      } else {
-        throw new Error(t('missingCustomerInfo'));
-      }
-
     } catch (err) {
       console.error('Error fetching session:', err);
-      if (retryCount < maxRetries) {
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-        }, retryDelay * Math.pow(2, retryCount));
-      } else {
-        setError(err.message || t('errorLoadingSubscription'));
-      }
+      setError(err.message || t('errorLoadingSubscription'));
     } finally {
       setLoading(false);
     }
@@ -204,13 +202,25 @@ const Success = () => {
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">{t('price')}</span>
                   <span className="font-medium text-gray-900">
-                    {subscriptionInfo.amount_total / 100} {subscriptionInfo.currency.toUpperCase()}
+                    {formatAmount(subscriptionInfo.amount_total, subscriptionInfo.currency)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600">{t('customerName')}</span>
+                  <span className="font-medium text-gray-900">
+                    {subscriptionInfo.customer_details?.name}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">{t('customerEmail')}</span>
                   <span className="font-medium text-gray-900">
                     {subscriptionInfo.customer_details?.email}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600">{t('customerAddress')}</span>
+                  <span className="font-medium text-gray-900">
+                    {subscriptionInfo.customer_details?.address?.line1}, {subscriptionInfo.customer_details?.address?.city}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">

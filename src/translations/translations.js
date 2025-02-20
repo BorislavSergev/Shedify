@@ -432,6 +432,10 @@ export const translations = {
     noPlanOrBusiness: "Не е избран план или бизнес",
     paid: "Платено",
     unpaid: "Неплатено",
+    customerName: "Име",
+    customerAddress: "Адрес",
+    paymentIncomplete: "Незавършено плащане",
+    subscriptionId: "Номер на абонамент",
   },
   en: {
     // Payment & Subscription
@@ -852,5 +856,9 @@ export const translations = {
     noPlanOrBusiness: "No plan or business selected",
     paid: "Paid",
     unpaid: "Unpaid",
+    customerName: "Name",
+    customerAddress: "Address",
+    paymentIncomplete: "Payment Incomplete",
+    subscriptionId: "Subscription ID",
   }
 }
