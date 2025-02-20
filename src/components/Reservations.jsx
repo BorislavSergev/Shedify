@@ -277,8 +277,7 @@ const Reservations = () => {
         const { error: updateError } = await supabase
           .from("Reservations")
           .update({ 
-            reminderId: reminderResponse.data.reminderId,
-            reminderDate: reminderResponse.data.reminderDate
+            reminderId: reminderResponse.id
           })
           .eq("id", reservationId);
 

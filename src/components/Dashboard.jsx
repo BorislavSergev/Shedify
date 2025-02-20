@@ -5,8 +5,7 @@ import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
 
-const BACKEND_EMAIL_URL = process.env.REACT_APP_BACKEND_EMAIL || 'http://localhost:3001';
-const FRONTEND_URL = process.env.REACT_APP_FRONTEND_URL || 'http://localhost:3000';
+import { BACKEND_EMAIL_URL, FRONTEND_URL } from '../config/config';
 
 const Dashboard = () => {
   const { translate } = useLanguage();
@@ -298,8 +297,7 @@ const Dashboard = () => {
         const { error: updateError } = await supabase
           .from("Reservations")
           .update({ 
-            reminderId: reminderResponse.data.reminderId,
-            reminderDate: reminderResponse.data.reminderDate
+            reminderId: reminderResponse.id
           })
           .eq("id", reservationId);
 
