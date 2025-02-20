@@ -53,9 +53,8 @@ const Success = () => {
         .update({
           planId: planId,
           stripe_customer_id: stripeCustomerId,
-          stripe_subscription_id: subscriptionId,
-          subscription_status: 'active',
-          updated_at: new Date().toISOString()
+          visibility: true,
+          membership_expiry: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString()
         })
         .eq('id', selectedBusiness.id);
 
@@ -64,15 +63,6 @@ const Success = () => {
         throw new Error(t('errorUpdatingBusiness'));
       }
 
-      // Update local storage business data
-      const updatedBusiness = {
-        ...selectedBusiness,
-        planId: planId,
-        stripe_customer_id: stripeCustomerId,
-        stripe_subscription_id: subscriptionId,
-        subscription_status: 'active'
-      };
-      localStorage.setItem('selectedBusiness', JSON.stringify(updatedBusiness));
 
     } catch (err) {
       console.error('Error in updateBusinessPlan:', err);
