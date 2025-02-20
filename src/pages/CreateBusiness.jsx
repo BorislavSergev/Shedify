@@ -54,26 +54,39 @@ const CreateBusiness = () => {
         if (createThemeError) throw new Error("Failed to create default theme");
       }
 
+      // Log the data we're about to insert
+      console.log('Attempting to create business with:', {
+        name: formData.name.trim(),
+        owner_id: user.id,
+        type: "Other",
+        visibility: false,
+        theme: "Default",
+        themeData: defaultThemeData,
+        language: "bg"
+      });
+
       // Create the business
       const { data: businessData, error: businessError } = await supabase
         .from("Business")
-        .insert([{
+        .insert({
           name: formData.name.trim(),
           owner_id: user.id,
           type: "Other",
           visibility: false,
           theme: "Default",
-          themeData: JSON.stringify(defaultThemeData), // Ensure proper JSON formatting
-          language: "bg",
-          description: null
-        }])
-        .select('id, name, owner_id, visibility, theme, themeData, language')
+          themeData: defaultThemeData, // Using the raw object, Supabase will handle JSON conversion
+          language: "bg"
+        })
+        .select('*') // Select all fields to verify what was saved
         .single();
       
       if (businessError) {
         console.error('Business Creation Error:', businessError);
         throw new Error(businessError.message);
       }
+
+      // Log the created business data
+      console.log('Created business:', businessData);
 
       if (!businessData || !businessData.id) {
         throw new Error("Failed to create business");
