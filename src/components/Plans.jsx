@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import supabase from '../hooks/supabase'; // Your Supabase hook
 import { useStripeCheckout } from '../hooks/stripe'; // Use custom Stripe checkout hook
-import { translations } from '../translations/translations';
-import { useLanguage } from '../hooks/useLanguage'; // You'll need to create this hook if you haven't already
+import { useLanguage } from '../hooks/useLanguage'; // Import useLanguage hook
 
 const Plans = () => {
+  const { translate } = useLanguage(); // Ensure this retrieves translate correctly
   const [plans, setPlans] = useState([]);
-  const [currentPlanId, setCurrentPlanId] = useState(null); // Track the current plan for the business
-  const [stripeCustomerId, setStripeCustomerId] = useState(null); // Track the stripe_customer_id
+  const [currentPlanId, setCurrentPlanId] = useState(null);
+  const [stripeCustomerId, setStripeCustomerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const { handleCheckout } = useStripeCheckout(); // Stripe checkout function
-  const { currentLanguage } = useLanguage(); // Get current language
 
   const selectedBusiness = useMemo(() => {
     try {
@@ -58,7 +57,7 @@ const Plans = () => {
     };
 
     initialize();
-  }, []);
+  }, [selectedBusiness.id]);
 
   const goToCustomerPortal = async () => {
     try {
@@ -86,21 +85,11 @@ const Plans = () => {
       if (stripeCustomerId) {
         await goToCustomerPortal();
       } else {
-        // Store the selected plan in localStorage before checkout
         const selectedPlan = plans.find(plan => plan.id === planId);
         if (!selectedPlan) {
           throw new Error('Selected plan not found');
         }
 
-        // Log before saving to localStorage
-        console.log('Saving plan to localStorage:', {
-          id: selectedPlan.id,
-          name: selectedPlan.plan_name,
-          price: selectedPlan.price,
-          stripePriceId: selectedPlan.stripe_price_id
-        });
-
-        // Save to localStorage
         localStorage.setItem('subscription', JSON.stringify({
           id: selectedPlan.id,
           name: selectedPlan.plan_name,
@@ -108,45 +97,32 @@ const Plans = () => {
           stripePriceId: selectedPlan.stripe_price_id
         }));
 
-        // Verify the data was saved correctly
-        const savedData = localStorage.getItem('subscription');
-        console.log('Verified localStorage data:', {
-          raw: savedData,
-          parsed: JSON.parse(savedData)
-        });
-        
-        // Disable the button while loading
         const button = document.querySelector(`button[data-plan-id="${planId}"]`);
         if (button) button.disabled = true;
-        
-        // Wait a moment to ensure localStorage is updated
+
         await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Proceed with checkout
         await handleCheckout(stripePriceId);
       }
     } catch (error) {
       console.error('Plan selection failed:', error);
-      // Show error to user
       alert(error.message || 'Failed to process payment. Please try again.');
     } finally {
-      // Re-enable the button
       const button = document.querySelector(`button[data-plan-id="${planId}"]`);
       if (button) button.disabled = false;
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center p-6"><p className="text-lg">{translations[currentLanguage].loading}</p></div>;
+    return <div className="flex justify-center items-center p-6"><p className="text-lg">{translate("loading")}</p></div>;
   }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-b from-gray-50 to-white">
       <div className="text-center mb-8 sm:mb-12">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4">
-          {translations[currentLanguage].choosePlan}
+          {translate("choosePlan")}
         </h1>
         <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-4 mb-4">
-          {translations[currentLanguage].choosePlanDescription}
+          {translate("choosePlanDescription")}
         </p>
       </div>
 
@@ -156,7 +132,7 @@ const Plans = () => {
             onClick={goToCustomerPortal}
             className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
           >
-            {translations[currentLanguage].manageSubscription}
+            {translate("manageSubscription")}
           </button>
         </div>
       )}
@@ -180,37 +156,37 @@ const Plans = () => {
                   {isCurrentPlan && (
                     <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
                       <span className="bg-accent text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full">
-                        {translations[currentLanguage].currentPlan}
+                        {translate("currentPlan")}
                       </span>
                     </div>
                   )}
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{plan.plan_name}</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{plan.plan_name}</h2>
                     <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{plan.description}</p>
                     <div className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                       <div className="flex items-center text-gray-700">
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                         </svg>
-                        <span className="text-sm sm:text-base">{translations[currentLanguage].teamSize}: {plan.team_size}</span>
+                        <span className="text-sm sm:text-base">{translate("teamSize")}: {plan.team_size}</span>
                       </div>
                       <div className="flex items-center text-gray-700">
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                         </svg>
-                        <span className="text-sm sm:text-base">{translations[currentLanguage].maxServices}: {plan.max_services}</span>
+                        <span className="text-sm sm:text-base">{translate("maxServices")}: {plan.max_services}</span>
                       </div>
                       <div className="flex items-center text-gray-700">
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                         </svg>
-                        <span className="text-sm sm:text-base">{translations[currentLanguage].maxOffers}: {plan.max_offers}</span>
+                        <span className="text-sm sm:text-base">{translate("maxOffers")}: {plan.max_offers}</span>
                       </div>
                     </div>
                   </div>
                   <div>
                     <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
-                      {plan.price} лв.<span className="text-base sm:text-lg text-gray-500">/{translations[currentLanguage].perMonth}</span>
+                      {plan.price} лв.<span className="text-base sm:text-lg text-gray-500">/{translate("perMonth")}</span>
                     </p>
                     <button
                       data-plan-id={plan.id}
@@ -222,7 +198,7 @@ const Plans = () => {
                       }`}
                       disabled={isCurrentPlan || loading}
                     >
-                      {loading ? translations[currentLanguage].processing : isCurrentPlan ? translations[currentLanguage].currentPlan : translations[currentLanguage].choosePlan}
+                      {loading ? translate("processing") : isCurrentPlan ? translate("currentPlan") : translate("choosePlan")}
                     </button>
                   </div>
                 </div>
@@ -230,7 +206,7 @@ const Plans = () => {
             })
         ) : (
           <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-8 sm:py-12">
-            <p className="text-lg sm:text-xl text-gray-500">{translations[currentLanguage].noPlansAvailable}</p>
+            <p className="text-lg sm:text-xl text-gray-500">{translate("noPlansAvailable")}</p>
           </div>
         )}
       </div>

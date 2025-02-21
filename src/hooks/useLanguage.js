@@ -1,11 +1,12 @@
+// src/hooks/useLanguage.js
 import { useState, useEffect } from 'react';
 import { languages, defaultLanguage } from '../config/languages';
+import { translations } from '../translations/translations'; // Ensure this is imported
 
 export const useLanguage = () => {
   const [currentLanguage, setCurrentLanguage] = useState(defaultLanguage);
 
   useEffect(() => {
-    // Try to get language from localStorage, fallback to default
     const savedLanguage = localStorage.getItem('language');
     if (savedLanguage && languages[savedLanguage]) {
       setCurrentLanguage(savedLanguage);
@@ -19,9 +20,15 @@ export const useLanguage = () => {
     }
   };
 
+  const translate = (key) => {
+    const translation = translations[currentLanguage][key];
+    return translation || key; // Fallback to key if translation is not found
+  };
+
   return {
     currentLanguage,
     changeLanguage,
+    translate, // Ensure translate is returned
     languages
   };
-}; 
+};
