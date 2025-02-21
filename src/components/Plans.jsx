@@ -11,6 +11,7 @@ const Plans = () => {
   const [stripeCustomerId, setStripeCustomerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const { handleCheckout } = useStripeCheckout(); // Stripe checkout function
+  const [isLoadingButton, setIsLoadingButton] = useState(false); // New state for button loading
 
   const selectedBusiness = useMemo(() => {
     try {
@@ -98,6 +99,7 @@ const Plans = () => {
   };
 
   const handlePlanSelect = async (planId, stripePriceId) => {
+    setIsLoadingButton(true); // Set loading state to true
     try {
       if (stripeCustomerId) {
         await goToCustomerPortal();
@@ -126,6 +128,7 @@ const Plans = () => {
     } finally {
       const button = document.querySelector(`button[data-plan-id="${planId}"]`);
       if (button) button.disabled = false;
+      setIsLoadingButton(false); // Reset loading state
     }
   };
 
@@ -209,13 +212,25 @@ const Plans = () => {
                       data-plan-id={plan.id}
                       onClick={() => handlePlanSelect(plan.id, plan.stripe_price_id)}
                       className={`w-full py-2 sm:py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base transition-all duration-300 ${
-                        isCurrentPlan || loading
+                        isCurrentPlan || loading || isLoadingButton // Disable if loading or current plan
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-accent text-white hover:bg-accent/90 transform hover:-translate-y-1 hover:shadow-lg'
                       }`}
-                      disabled={isCurrentPlan || loading}
+                      disabled={isCurrentPlan || loading || isLoadingButton} // Disable button if loading
                     >
-                      {loading ? translate("processing") : isCurrentPlan ? translate("currentPlan") : translate("choosePlan")}
+                      {isLoadingButton ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8-8-3.582-8-8z"></path>
+                          </svg>
+                          {translate("processing")}
+                        </span>
+                      ) : isCurrentPlan ? (
+                        translate("currentPlan")
+                      ) : (
+                        translate("choosePlan")
+                      )}
                     </button>
                   </div>
                 </div>
