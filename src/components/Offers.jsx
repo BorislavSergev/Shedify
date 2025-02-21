@@ -436,29 +436,35 @@ const Offers = () => {
               </p>
             )}
           </div>
-          <button
-            onClick={() => {
-              if (services.length === 0) {
-                setError(translate('addServicesFirst'));
-              } else {
-                setShowForm(!showForm);
-              }
-            }}
-            className={`px-3 py-2 md:px-6 md:py-3 text-sm md:text-base rounded-lg shadow-lg transform transition-all duration-200 flex items-center space-x-2
-              ${services.length === 0 ? "bg-red-500 hover:bg-red-600" : "bg-accent hover:bg-accent-dark hover:-translate-y-0.5"} text-white font-semibold`}
-          >
-            <span>
-              {services.length === 0 ? (
-                translate('goToServices')
-              ) : (
-                isOfferLimitReached ? (
-                  translate('upgradePlan')
-                ) : showForm ? (
-                  translate('cancel')
-                ) : translate('addNewOffer')
-              )}
-            </span>
-          </button>
+          {services.length === 0 ? (
+              <button
+                onClick={() => window.location.href = "/dashboard/services"}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                {translate('goToServices')}
+              </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (isOfferLimitReached) {
+                  window.location.href = "/dashboard/subscription";
+                } else {
+                  setShowForm(!showForm);
+                }
+              }}
+              className={`px-3 py-2 md:px-6 md:py-3 text-sm md:text-base rounded-lg shadow-lg transform transition-all duration-200 flex items-center space-x-2
+                ${isOfferLimitReached ? "bg-gray-400 hover:bg-gray-500" : "bg-accent hover:bg-accent-dark hover:-translate-y-0.5"} text-white font-semibold`}
+            >
+              <span>
+                {isOfferLimitReached 
+                  ? translate('upgradePlan') 
+                  : showForm 
+                    ? translate('cancel') 
+                    : translate('addNewOffer')
+                }
+              </span>
+            </button>
+          )}
         </div>
 
         {error && (
@@ -622,64 +628,13 @@ const Offers = () => {
                   {translate('noOffersAvailable')}
                 </p>
                 <p className="mt-1 text-gray-500">
-                  {services.length === 0 
-                    ? translate('addServicesBeforeOffers')
-                    : isOfferLimitReached
-                      ? translate('upgradeToAddMoreOffers')
-                      : translate('createOfferToGetStarted')
-                  }
+                  {translate('addServicesBeforeOffers')}
                 </p>
                 <button
-                  onClick={() => {
-                    if (isOfferLimitReached) {
-                      window.location.href = "/dashboard/subscription";
-                    } else if (services.length === 0) {
-                      window.location.href = "/dashboard/services";
-                    } else {
-                      setShowForm(true);
-                    }
-                  }}
-                  className={`mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white 
-                    ${isOfferLimitReached || services.length === 0
-                      ? "bg-gray-400 hover:bg-gray-500"
-                      : "bg-accent hover:bg-accent-dark"
-                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent`}
+                  onClick={() => window.location.href = "/dashboard/services"}
+                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
-                  <svg 
-                    className="mr-2 h-5 w-5" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    {isOfferLimitReached ? (
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth="2" 
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    ) : services.length === 0 ? (
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth="2" 
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    ) : (
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth="2" 
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    )}
-                  </svg>
-                  {isOfferLimitReached 
-                    ? translate('upgradePlan')
-                    : services.length === 0
-                      ? translate('goToServices')
-                      : translate('createFirstOffer')
-                  }
+                  {translate('goToServices')}
                 </button>
               </div>
             ) : (
