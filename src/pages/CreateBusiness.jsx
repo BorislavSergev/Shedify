@@ -72,7 +72,7 @@ const CreateBusiness = () => {
         visibility: false,
         theme: "Default",
         "themeData": defaultThemeData, // Using quotes to ensure exact column name match
-        language: "bg",
+        language: "bulgarian",
         free_trial: false
       };
 
@@ -110,8 +110,8 @@ const CreateBusiness = () => {
       const { error: businessTeamError } = await supabase
         .from("BusinessTeam")
         .insert([{
-          business_id: createdBusiness.id,
-          user_id: user.id,
+          businessId: createdBusiness.id,
+          userId: user.id,
         }])
         .select();
 
