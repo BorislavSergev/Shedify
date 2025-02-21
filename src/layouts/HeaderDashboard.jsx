@@ -15,7 +15,7 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
   const [userProfile, setUserProfile] = useState({ firstName: "", avatar: "" });
 
   const navigate = useNavigate();
-  const { translate } = useLanguage();
+  const { translate, setLanguage } = useLanguage();
 
   const [selectedBusiness, setSelectedBusiness] = useState(() => {
     const savedBusiness = localStorage.getItem("selectedBusiness");
@@ -163,6 +163,10 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
     </div>
   );
 
+  const handleLanguageChange = (event) => {
+    setLanguage(event.target.value); // Set language based on user selection
+  };
+
   return (
     <>
       {loading && (
@@ -251,6 +255,10 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
           <div className="flex items-center gap-4">
             <LanguageSelector />
+            <select onChange={handleLanguageChange}>
+              <option value="en">English</option>
+              <option value="bg">Български</option>
+            </select>
             <div className="relative" ref={profileDropdownRef}>
               <button
                 className="overflow-hidden rounded-full border border-gray-300 shadow-inner"

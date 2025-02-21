@@ -1,34 +1,58 @@
 // src/hooks/useLanguage.js
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { languages, defaultLanguage } from '../config/languages';
 import { translations } from '../translations/translations'; // Ensure this is imported
 
-export const useLanguage = () => {
-  const [currentLanguage, setCurrentLanguage] = useState(defaultLanguage);
+// Example translations
+const translations = {
+  en: {
+    loading: "Loading...",
+    choosePlan: "Choose a Plan",
+    choosePlanDescription: "Select the plan that suits you best.",
+    currentPlan: "Current Plan",
+    teamSize: "Team Size",
+    maxServices: "Max Services",
+    // ... other translations
+  },
+  bg: {
+    loading: "Зареждане...",
+    choosePlan: "Изберете план",
+    choosePlanDescription: "Изберете плана, който най-добре отговаря на вас.",
+    currentPlan: "Текущ план",
+    teamSize: "Размер на екипа",
+    maxServices: "Макс. услуги",
+    // ... other translations
+  }
+};
+
+const LanguageContext = createContext();
+
+export const LanguageProvider = ({ children }) => {
+  const [language, setLanguage] = useState('en'); // Default language
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language');
     if (savedLanguage && languages[savedLanguage]) {
-      setCurrentLanguage(savedLanguage);
+      setLanguage(savedLanguage);
     }
   }, []);
 
   const changeLanguage = (language) => {
     if (languages[language]) {
-      setCurrentLanguage(language);
+      setLanguage(language);
       localStorage.setItem('language', language);
     }
   };
 
   const translate = (key) => {
-    const translation = translations[currentLanguage][key];
-    return translation || key; // Fallback to key if translation is not found
+    return translations[language][key] || key; // Fallback to key if translation not found
   };
 
-  return {
-    currentLanguage,
-    changeLanguage,
-    translate, // Ensure translate is returned
-    languages
-  };
+  return (
+    <LanguageContext.Provider value={{ translate, setLanguage }}>
+      {children}
+    </LanguageContext.Provider>
+  );
 };
+
+export const useLanguage = () => useContext(LanguageContext);
