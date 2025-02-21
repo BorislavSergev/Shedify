@@ -295,7 +295,7 @@ const Teams = () => {
 
       setNewMember({ email: "", permissions: [] });
       setShowAddMember(false);
-      await fetchPendingInvites(); // Refresh pending invites
+      await fetchPendingInvites(); // Refresh pending  invites
       showToast(`Invitation sent to ${newMember.email}`, 'success');
     } catch (error) {
       showToast(error.message || 'Error sending invitation', 'error');
