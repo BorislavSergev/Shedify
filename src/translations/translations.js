@@ -531,7 +531,14 @@ export const translations = {
     from: "From",
     to: "To",
 
-
+    choosePlan: "Choose Plan",
+    choosePlanDescription: "Select the perfect plan for your business needs and start growing today",
+    manageSubscription: "Manage Subscription",
+    currentPlan: "Current Plan",
+    teamSize: "Team Size",
+    maxServices: "Maximum Number of Services",
+    maxOffers: "Maximum Number of Offers",
+    perMonth: "Month",
 
     // Plans
     currentPlan: "Current Plan",

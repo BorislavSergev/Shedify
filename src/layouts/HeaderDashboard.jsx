@@ -45,7 +45,11 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
       try {
         // Get the logged-in user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error(translate("userAuthFailed"));
+        if (userError || !user) {
+          // Redirect to login if user is not authenticated
+          window.location.href = "/login"; // Redirect to login
+          return;
+        }
 
         // Fetch user profile from Users table
         const { data: userProfileData, error: userProfileError } = await supabase
