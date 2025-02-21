@@ -119,7 +119,10 @@ const CreateBusiness = () => {
         console.error('BusinessTeam Error:', businessTeamError);
         throw new Error(businessTeamError.message);
       }
-      
+
+      // Navigate to dashboard after everything is successful
+      navigate("/dashboard");
+
     } catch (error) {
       console.error('Error:', error);
       setError(error.message);
@@ -131,7 +134,7 @@ const CreateBusiness = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Create New Business</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Създай нов бизнес</h1>
 
         {error && (
           <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
@@ -143,7 +146,7 @@ const CreateBusiness = () => {
           <input
             type="text"
             name="name"
-            placeholder="Business Name"
+            placeholder="Име на бизнеса"
             value={formData.name}
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md"
@@ -159,7 +162,7 @@ const CreateBusiness = () => {
                 : "bg-accent hover:bg-accentHover"
             } text-white`}
           >
-            {loading ? "Creating..." : "Create Business"}
+            {loading ? "Създаване..." : "Създай бизнес"}
           </button>
         </form>
       </div>

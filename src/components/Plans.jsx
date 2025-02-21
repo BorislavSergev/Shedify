@@ -10,7 +10,7 @@ const Plans = () => {
   const [stripeCustomerId, setStripeCustomerId] = useState(null); // Track the stripe_customer_id
   const [loading, setLoading] = useState(true);
   const { handleCheckout } = useStripeCheckout(); // Stripe checkout function
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage } = useLanguage(); // Get current language
 
   const selectedBusiness = useMemo(() => {
     try {
@@ -136,9 +136,6 @@ const Plans = () => {
     }
   };
 
-  // Add new function to handle test request
-  
-
   if (loading) {
     return <div className="flex justify-center items-center p-6"><p className="text-lg">{translations[currentLanguage].loading}</p></div>;
   }
@@ -151,7 +148,6 @@ const Plans = () => {
         <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-4 mb-4">
           {translations[currentLanguage].choosePlanDescription}
         </p>
-        
       </div>
 
       {stripeCustomerId && (
@@ -214,7 +210,7 @@ const Plans = () => {
                   </div>
                   <div>
                     <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
-                      {plan.price} лв.<span className="text-base sm:text-lg text-gray-500">/мес</span>
+                      {plan.price} лв.<span className="text-base sm:text-lg text-gray-500">/{translations[currentLanguage].perMonth}</span>
                     </p>
                     <button
                       data-plan-id={plan.id}
@@ -226,7 +222,7 @@ const Plans = () => {
                       }`}
                       disabled={isCurrentPlan || loading}
                     >
-                      {loading ? 'Processing...' : isCurrentPlan ? translations[currentLanguage].currentPlan : translations[currentLanguage].choosePlan}
+                      {loading ? translations[currentLanguage].processing : isCurrentPlan ? translations[currentLanguage].currentPlan : translations[currentLanguage].choosePlan}
                     </button>
                   </div>
                 </div>

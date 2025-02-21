@@ -4,6 +4,7 @@ import { FaBars, FaPlus } from "react-icons/fa";
 import supabase from "../hooks/supabase"; // Import Supabase client
 import LanguageSelector from '../components/LanguageSelector';
 import { useLanguage } from '../contexts/LanguageContext';
+import { motion } from "framer-motion"; // Import Framer Motion
 
 const HeaderDashboard = ({ onSidebarToggle }) => {
   const [isBusinessDropdownOpen, setIsBusinessDropdownOpen] = useState(false);
@@ -163,107 +164,127 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
   );
 
   return (
-    <header className="bg-white sticky top-0 z-20 shadow-md w-full">
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-        <button
-          className="md:hidden p-2 text-gray-600 hover:text-gray-800"
-          onClick={onSidebarToggle}
+    <>
+      {loading && (
+        <motion.div 
+          className="fixed inset-0 flex items-center justify-center bg-white z-50"
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }} 
+          transition={{ duration: 0.5 }}
         >
-          <FaBars className="text-2xl" />
-        </button>
-
-        <div
-          className="relative flex-1 flex items-center justify-center md:justify-start"
-          ref={businessDropdownRef}
-        >
-          <button
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-600"
-            onClick={toggleBusinessDropdown}
+          <motion.div 
+            className="loader"
+            initial={{ rotate: 0 }} 
+            animate={{ rotate: 360 }} 
+            transition={{ duration: 1, repeat: Infinity }}
           >
-            <span className="truncate">{selectedBusiness.name}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`w-4 h-4 transform transition-transform ${isBusinessDropdownOpen ? "rotate-180" : ""}`}
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 10.707l3.71-3.475a.75.75 0 111.02 1.1l-4 3.75a.75.75 0 01-1.02 0l-4-3.75a.75.75 0 01.02-1.062z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <div className="border-8 border-t-8 border-gray-300 border-t-accent rounded-full w-16 h-16"></div>
+          </motion.div>
+        </motion.div>
+      )}
+      <header className={`bg-white sticky top-0 z-20 shadow-md w-full ${loading ? 'hidden' : ''}`}>
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+          <button
+            className="md:hidden p-2 text-gray-600 hover:text-gray-800"
+            onClick={onSidebarToggle}
+          >
+            <FaBars className="text-2xl" />
           </button>
-          {isBusinessDropdownOpen && (
-            <div
-              className="absolute top-full left-0 mt-2 w-64 bg-white shadow-lg rounded-md border divide-y divide-gray-100 z-30"
-              style={{ minWidth: "12rem" }}
-            >
-              {loading ? (
-                <div className="block px-4 py-2 text-sm text-gray-500">{translate("loading")}</div>
-              ) : error ? (
-                <div className="block px-4 py-2 text-sm text-red-500">{error}</div>
-              ) : businesses.length > 0 ? (
-                <ul>
-                  {businesses.map((business) => (
-                    <li
-                      key={business.id}
-                      className="block px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleBusinessSelect(business)}
-                    >
-                      {business.name}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="block px-4 py-2 text-sm text-gray-500">{translate("noBusinessesAvailable")}</div>
-              )}
-              <div
-                className="flex items-center px-4 py-2 text-sm text-accent hover:bg-itemsHover cursor-pointer"
-                onClick={() => window.location.href = "/create-business"}
-              >
-                <FaPlus className="mr-2" />
-                {translate("createBusiness")}
-              </div>
-            </div>
-          )}
-        </div>
 
-        <div className="flex items-center gap-4">
-          <LanguageSelector />
-          <div className="relative" ref={profileDropdownRef}>
+          <div
+            className="relative flex-1 flex items-center justify-center md:justify-start"
+            ref={businessDropdownRef}
+          >
             <button
-              className="overflow-hidden rounded-full border border-gray-300 shadow-inner"
-              onClick={toggleProfileDropdown}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-600"
+              onClick={toggleBusinessDropdown}
             >
-              <span className="sr-only">{translate("toggleProfileMenu")}</span>
-              {profileInitial}
+              <span className="truncate">{selectedBusiness.name}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`w-4 h-4 transform transition-transform ${isBusinessDropdownOpen ? "rotate-180" : ""}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.707l3.71-3.475a.75.75 0 111.02 1.1l-4 3.75a.75.75 0 01-1.02 0l-4-3.75a.75.75 0 01.02-1.062z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </button>
-            {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md border divide-y divide-gray-100 z-30">
-                <div className="p-2">
-                  <Link
-                    to="/dashboard/profile"
-                    className="block px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
-                    onClick={closeDropdowns}
-                  >
-                    {translate("myProfile")}
-                  </Link>
-                </div>
-                <div className="p-2">
-                  <button
-                    className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                    onClick={handleSignOut}
-                  >
-                    {translate("signOut")}
-                  </button>
+            {isBusinessDropdownOpen && (
+              <div
+                className="absolute top-full left-0 mt-2 w-64 bg-white shadow-lg rounded-md border divide-y divide-gray-100 z-30"
+                style={{ minWidth: "12rem" }}
+              >
+                {loading ? (
+                  <div className="block px-4 py-2 text-sm text-gray-500">{translate("loading")}</div>
+                ) : error ? (
+                  <div className="block px-4 py-2 text-sm text-red-500">{error}</div>
+                ) : businesses.length > 0 ? (
+                  <ul>
+                    {businesses.map((business) => (
+                      <li
+                        key={business.id}
+                        className="block px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleBusinessSelect(business)}
+                      >
+                        {business.name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="block px-4 py-2 text-sm text-gray-500">{translate("noBusinessesAvailable")}</div>
+                )}
+                <div
+                  className="flex items-center px-4 py-2 text-sm text-accent hover:bg-itemsHover cursor-pointer"
+                  onClick={() => window.location.href = "/create-business"}
+                >
+                  <FaPlus className="mr-2" />
+                  {translate("createBusiness")}
                 </div>
               </div>
             )}
           </div>
+
+          <div className="flex items-center gap-4">
+            <LanguageSelector />
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                className="overflow-hidden rounded-full border border-gray-300 shadow-inner"
+                onClick={toggleProfileDropdown}
+              >
+                <span className="sr-only">{translate("toggleProfileMenu")}</span>
+                {profileInitial}
+              </button>
+              {isProfileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md border divide-y divide-gray-100 z-30">
+                  <div className="p-2">
+                    <Link
+                      to="/dashboard/profile"
+                      className="block px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
+                      onClick={closeDropdowns}
+                    >
+                      {translate("myProfile")}
+                    </Link>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                      onClick={handleSignOut}
+                    >
+                      {translate("signOut")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 };
 

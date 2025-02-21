@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import supabase from "../hooks/supabase";
 import { useNavigate } from "react-router-dom";
+import defaultThemeData from "./themes/default/data.json";
 
 const CreateBusiness = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    description: "",
+    name: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +23,7 @@ const CreateBusiness = () => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      setError("Please enter a business name");
+      setError("Моля, въведете име на бизнеса");
       return;
     }
 
@@ -34,48 +33,97 @@ const CreateBusiness = () => {
 
       // Get the logged-in user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("User authentication failed");
+      
+      if (userError) throw new Error("Грешка при автентикация. Моля, влезте отново.");
+      if (!user || !user.id) throw new Error("Не е намерен потребител. Моля, влезте в профила си.");
+
+      // First, ensure the Default theme exists
+      const { data: themeData, error: themeError } = await supabase
+        .from("Themes")
+        .select("*")
+        .eq("name", "Default")
+        .single();
+
+      console.log("Theme check result:", themeData, themeError);
+
+      if (themeError || !themeData) {
+        // Create the Default theme if it doesn't exist
+        const { data: newTheme, error: createThemeError } = await supabase
+          .from("Themes")
+          .insert([{
+            name: "Default",
+            description: "Default theme"
+          }])
+          .select()
+          .single();
+
+        if (createThemeError) {
+          console.error('Theme Creation Error:', createThemeError);
+          throw new Error("Failed to create default theme");
+        }
+        console.log("Created new theme:", newTheme);
+      }
+
+      // Prepare the business data
+      const businessData = {
+        name: formData.name.trim(),
+        owner_id: user.id,
+        type: "Other",
+        visibility: false,
+        theme: "Default",
+        "themeData": defaultThemeData, // Using quotes to ensure exact column name match
+        language: "bg",
+        free_trial: false
+      };
+
+      console.log("Attempting to create business with data:", businessData);
 
       // Create the business
-      const { data: businessData, error: businessError } = await supabase
+      const { data: createdBusiness, error: businessError } = await supabase
         .from("Business")
-        .insert([{
-          name: formData.name,
-          description: formData.description || "Business description",
-          type: formData.type || "Other",
-          owner_id: user.id,
-          visibility: true, // Default visibility
-        }])
-        .select();
-      
-      if (businessError) throw new Error(businessError.message);
+        .insert([businessData])
+        .select(`
+          id,
+          name,
+          owner_id,
+          type,
+          visibility,
+          theme,
+          "themeData",
+          language,
+          free_trial
+        `)
+        .single();
+
+      if (businessError) {
+        console.error('Business Creation Error:', businessError);
+        throw new Error(businessError.message);
+      }
+
+      console.log("Created business:", createdBusiness);
+
+      if (!createdBusiness.theme || !createdBusiness.themeData) {
+        console.error('Theme or themeData is null in created business');
+      }
 
       // Add user to BusinessTeam
-      const { data: businessTeamData, error: businessTeamError } = await supabase
+      const { error: businessTeamError } = await supabase
         .from("BusinessTeam")
         .insert([{
-          businessId: businessData[0].id,
+          businessId: createdBusiness.id,
           userId: user.id,
         }])
         .select();
 
-      if (businessTeamError) throw new Error(businessTeamError.message);
-
-      // Add all permissions for the owner
-      const permissionIds = [12, 13, 14, 15, 16]; // All settings permissions
-      const permissionsToInsert = permissionIds.map(permissionId => ({
-        businessTeamId: businessTeamData[0].id,
-        permissionId,
-      }));
-
-      const { error: permissionsError } = await supabase
-        .from("BusinessTeam_Permissions")
-        .insert(permissionsToInsert);
-
-      if (permissionsError) throw new Error(permissionsError.message);
+      if (businessTeamError) {
+        console.error('BusinessTeam Error:', businessTeamError);
+        throw new Error(businessTeamError.message);
+      }
 
       navigate("/dashboard");
+
     } catch (error) {
+      console.error('Error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -85,7 +133,7 @@ const CreateBusiness = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Create New Business</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Създай нов бизнес</h1>
 
         {error && (
           <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
@@ -97,7 +145,7 @@ const CreateBusiness = () => {
           <input
             type="text"
             name="name"
-            placeholder="Business Name"
+            placeholder="Име на бизнеса"
             value={formData.name}
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md"
@@ -113,7 +161,7 @@ const CreateBusiness = () => {
                 : "bg-accent hover:bg-accentHover"
             } text-white`}
           >
-            {loading ? "Creating..." : "Create Business"}
+            {loading ? "Създаване..." : "Създай бизнес"}
           </button>
         </form>
       </div>

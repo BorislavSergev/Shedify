@@ -18,6 +18,7 @@ const Register = () => {
   const [inviteBusiness, setInviteBusiness] = useState(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,12 +99,8 @@ const Register = () => {
 
         if (updateError) throw updateError;
 
-        if (inviteToken && inviteBusiness) {
-          setShowInviteDialog(true); // Show the invitation dialog
-        } else {
-          // Navigate to verify email page
-          navigate("/verify-email");
-        }
+        // Show confirmation message instead of the form
+        setShowConfirmation(true);
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -184,111 +181,126 @@ const Register = () => {
   return (
     <div className="flex h-screen justify-center items-center bg-primary">
       <div className="w-full max-w-md p-8 bg-white shadow-md rounded-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">
-          {isBusinessInvite ? "Приемете покана за екип" : "Създайте акаунт"}
-        </h2>
-        {errorMessages.length > 0 && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-            {errorMessages.map((msg, idx) => (
-              <p key={idx}>{msg}</p>
-            ))}
+        {showConfirmation ? (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Потвърдете имейла си</h2>
+            <p className="mb-4">Моля, проверете имейла си, за да потвърдите акаунта си.</p>
+            <button
+              onClick={() => navigate("/login")}
+              className="w-full bg-accent text-white py-2 px-4 rounded-md hover:bg-accent/90 transition-colors"
+            >
+              Отидете на вход
+            </button>
           </div>
-        )}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2" htmlFor="first_name">
-              Име
-            </label>
-            <input
-              id="first_name"
-              name="first_name"
-              type="text"
-              value={formData.first_name}
-              onChange={handleChange}
-              placeholder="Въведете вашето име"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2" htmlFor="last_name">
-              Фамилия
-            </label>
-            <input
-              id="last_name"
-              name="last_name"
-              type="text"
-              value={formData.last_name}
-              onChange={handleChange}
-              placeholder="Въведете вашата фамилия"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2" htmlFor="email">
-              Имейл
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Въведете вашия имейл"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2" htmlFor="phone_number">
-              Телефонен номер
-            </label>
-            <input
-              id="phone_number"
-              name="phone_number"
-              type="tel"
-              value={formData.phone_number}
-              onChange={handleChange}
-              placeholder="Въведете вашия телефонен номер"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
-              required
-            />
-          </div>
-          <div className="mb-6 relative">
-            <label className="block text-sm font-medium mb-2" htmlFor="password">
-              Парола
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Въведете вашата парола"
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
-                required
-              />
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold text-center mb-6">
+              {isBusinessInvite ? "Приемете покана за екип" : "Създайте акаунт"}
+            </h2>
+            {errorMessages.length > 0 && (
+              <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                {errorMessages.map((msg, idx) => (
+                  <p key={idx}>{msg}</p>
+                ))}
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2" htmlFor="first_name">
+                  Име
+                </label>
+                <input
+                  id="first_name"
+                  name="first_name"
+                  type="text"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  placeholder="Въведете вашето име"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2" htmlFor="last_name">
+                  Фамилия
+                </label>
+                <input
+                  id="last_name"
+                  name="last_name"
+                  type="text"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  placeholder="Въведете вашата фамилия"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2" htmlFor="email">
+                  Имейл
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Въведете вашия имейл"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2" htmlFor="phone_number">
+                  Телефонен номер
+                </label>
+                <input
+                  id="phone_number"
+                  name="phone_number"
+                  type="tel"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  placeholder="Въведете вашия телефонен номер"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              </div>
+              <div className="mb-6 relative">
+                <label className="block text-sm font-medium mb-2" htmlFor="password">
+                  Парола
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Въведете вашата парола"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                  </button>
+                </div>
+              </div>
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                type="submit"
+                className={`w-full bg-accent text-white py-2 px-4 rounded-md hover:bg-accent/90 transition-colors ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={loading}
               >
-                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                {loading ? "Регистрация..." : "Регистрирай се"}
               </button>
-            </div>
-          </div>
-          <button
-            type="submit"
-            className={`w-full bg-accent text-white py-2 px-4 rounded-md hover:bg-accent/90 transition-colors ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            disabled={loading}
-          >
-            {loading ? "Регистрация..." : "Регистрирай се"}
-          </button>
-        </form>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );

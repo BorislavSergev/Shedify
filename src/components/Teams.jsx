@@ -245,6 +245,11 @@ const Teams = () => {
         throw userError;
       }
 
+      if (userData) {
+        navigate(`/dashboard?token=${userData.id}&business=${selectedBusiness.id}`); // Redirect to accept invite
+        return; // Exit the function after redirecting
+      }
+
       const token = uuidv4();
       const { error: inviteError } = await supabase
         .from("businessteaminvites")
