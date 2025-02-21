@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Teams from "./components/Teams";
 import Offers from "./components/Offers";
-import CreateBusiness from "./pages/CreateBusiness ";
+import CreateBusiness from "./pages/CreateBusiness";
 import Reservations from "./components/Reservations";
 import Services from "./components/Services";
 import Home from "./pages/Home";
