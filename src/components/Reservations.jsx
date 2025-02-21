@@ -118,6 +118,11 @@ const Reservations = () => {
           if (error) throw error;
           setBusiness(data);
           setBusinessLanguage(data.language || 'english');
+
+          // Check if the business has a plan
+          if (!data.plan) { // Assuming 'plan' is the field that indicates the business plan
+            navigate('/subscription'); // Redirect to subscription page
+          }
         }
       } catch (err) {
         console.error("Error fetching business data:", err);

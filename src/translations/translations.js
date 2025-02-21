@@ -449,7 +449,7 @@ export const translations = {
     maxServices: "Максимален брой услуги",
     maxOffers: "Максимален брой оферти",
     perMonth: "мес",
-
+    noPlan: "Няма план",
     // Offer error messages
     teamMemberIdNotFound: "Не е намерен идентификатор на член на екипа",
     allFieldsRequired: "Всички полета са задължителни",
@@ -530,7 +530,7 @@ export const translations = {
     customRange: "Custom Range",
     from: "From",
     to: "To",
-
+    noPlan: "No Plan",
     choosePlan: "Choose Plan",
     choosePlanDescription: "Select the perfect plan for your business needs and start growing today",
     manageSubscription: "Manage Subscription",

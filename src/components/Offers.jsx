@@ -160,6 +160,12 @@ const Offers = () => {
         .eq('id', selectedBusiness.id)
         .single();
 
+      // Check if the business has a plan
+      if (!BusinessPlan || !BusinessPlan.planId) {
+        window.location.href = "/subscription"; // Redirect to subscription if no plan
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
 
       const { data: planData, error: planError } = await supabase

@@ -91,6 +91,11 @@ const Settings = () => {
         .single();
       if (error) throw error;
 
+      if (!data.planId) {
+        navigate('/subscription');
+        return;
+      }
+
       setActiveTheme(data.theme);
 
       setBusinessDetails({

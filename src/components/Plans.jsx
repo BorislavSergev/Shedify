@@ -16,7 +16,7 @@ const Plans = () => {
   const selectedBusiness = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem('selectedBusiness')) || {};
-    } catch (error) {
+    } catch (error) { 
       console.error('Invalid business data in local storage', error);
       return {};
     }

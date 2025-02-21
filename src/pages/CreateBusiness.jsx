@@ -120,8 +120,10 @@ const CreateBusiness = () => {
         throw new Error(businessTeamError.message);
       }
 
-      // Navigate to dashboard after everything is successful
-      navigate("/dashboard");
+      // Navigate to dashboard after a delay
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000); // Delay of 1 second
 
     } catch (error) {
       console.error('Error:', error);

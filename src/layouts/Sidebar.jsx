@@ -193,7 +193,7 @@ const Sidebar = () => {
         <div className="p-4 border-t border-gray-200">
           <div className="flex flex-col gap-2">
             <p className="text-sm text-gray-500">
-              {translate('plan')}: <span className={currentPlan === "No Plan" ? "text-red-500 font-medium" : ""}>{currentPlan}</span>
+              {translate('plan')}: <span className={currentPlan === translate('noPlan') ? "text-red-500 font-medium" : ""}>{currentPlan}</span>
             </p>
             <button
               className="w-full px-4 py-2 text-sm text-white bg-accent rounded-md shadow hover:bg-accentHover transition"
