@@ -60,6 +60,22 @@ const Plans = () => {
     initialize();
   }, [selectedBusiness.id]);
 
+  // Add this useEffect to re-fetch translations when language changes
+  useEffect(() => {
+    // Re-fetch plans or any other necessary data when language changes
+    const fetchPlans = async () => {
+      try {
+        const { data, error } = await supabase.from('Plans').select('*');
+        if (error) throw error;
+        setPlans(data);
+      } catch (err) {
+        console.error('Failed to fetch plans:', err);
+      }
+    };
+
+    fetchPlans();
+  }, [translate]); // Dependency on translate to trigger when language changes
+
   const goToCustomerPortal = async () => {
     try {
       const response = await fetch('https://stripe.swiftabook.com/create-portal-session', {
