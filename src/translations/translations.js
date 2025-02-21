@@ -441,6 +441,15 @@ export const translations = {
     missingSubscriptionInfo: "Липсва информация за абонамента",
     subscriptionUpdated: "Абонаментът е обновен успешно",
 
+    choosePlan: "Избери план",
+    choosePlanDescription: "Избери най-подходящия план за вашите нужди и започнете да растете днес",
+    manageSubscription: "Управление на абонамента",
+    currentPlan: "Текущ план",
+    teamSize: "Размер на екипа",
+    maxServices: "Максимален брой услуги",
+    maxOffers: "Максимален брой оферти",
+    perMonth: "мес",
+
     // Offer error messages
     teamMemberIdNotFound: "Не е намерен идентификатор на член на екипа",
     allFieldsRequired: "Всички полета са задължителни",

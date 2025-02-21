@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import supabase from '../hooks/supabase'; // Your Supabase hook
 import { useStripeCheckout } from '../hooks/stripe'; // Use custom Stripe checkout hook
 import { useLanguage } from '../hooks/useLanguage'; // Import useLanguage hook
+import { LanguageContext } from '../contexts/LanguageContext'; // Adjust the path as necessary
 
 const Plans = () => {
   const { translate } = useLanguage(); // Ensure this retrieves translate correctly

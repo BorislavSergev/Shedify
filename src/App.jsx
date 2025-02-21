@@ -25,7 +25,6 @@ import Default from "./pages/themes/default/default";
 import ManageReservation from "./pages/ManageReservation";
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ToastProvider } from './contexts/ToastContext';
-import HeaderDashboard from './layouts/HeaderDashboard';
 
 const App = () => {
   const [user, setUser] = useState(null); // Track user state
@@ -227,8 +226,6 @@ const App = () => {
             </Route>
           </Routes>
         </Router>
-        <HeaderDashboard />
-        <Plans />
       </LanguageProvider>
     </ToastProvider>
   );
