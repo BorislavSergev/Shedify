@@ -259,10 +259,6 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
           <div className="flex items-center gap-4">
             <LanguageSelector />
-            <select onChange={handleLanguageChange}>
-              <option value="en">English</option>
-              <option value="bg">Български</option>
-            </select>
             <div className="relative" ref={profileDropdownRef}>
               <button
                 className="overflow-hidden rounded-full border border-gray-300 shadow-inner"
