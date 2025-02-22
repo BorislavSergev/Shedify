@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import supabase from '../hooks/supabase'; // Your Supabase hook
 import { useStripeCheckout } from '../hooks/stripe'; // Use custom Stripe checkout hook
 import { useLanguage } from '../hooks/useLanguage'; // Import useLanguage hook
-import { LanguageContext } from '../contexts/LanguageContext'; // Adjust the path as necessary
 
 const Plans = () => {
   const { translate } = useLanguage(); // Ensure this retrieves translate correctly
-  const [plans, setPlans] = useState([]);
+  const [plans, setPlans] = useState([]); // State to store plans
   const [currentPlanId, setCurrentPlanId] = useState(null);
   const [stripeCustomerId, setStripeCustomerId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +21,7 @@ const Plans = () => {
     }
   }, []);
 
+  // Fetch plans and current plan only if not already loaded
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -59,23 +59,7 @@ const Plans = () => {
     };
 
     initialize();
-  }, [selectedBusiness.id]);
-
-  // Add this useEffect to re-fetch translations when language changes
-  useEffect(() => {
-    // Re-fetch plans or any other necessary data when language changes
-    const fetchPlans = async () => {
-      try {
-        const { data, error } = await supabase.from('Plans').select('*');
-        if (error) throw error;
-        setPlans(data);
-      } catch (err) {
-        console.error('Failed to fetch plans:', err);
-      }
-    };
-
-    fetchPlans();
-  }, [translate]); // Dependency on translate to trigger when language changes
+  }, [selectedBusiness.id]); // Only re-fetch if selectedBusiness.id changes
 
   const goToCustomerPortal = async () => {
     try {
@@ -113,28 +97,16 @@ const Plans = () => {
           id: selectedPlan.id,
           name: selectedPlan.plan_name,
           price: selectedPlan.price,
-          stripePriceId: selectedPlan.stripe_price_id
         }));
-
-        const button = document.querySelector(`button[data-plan-id="${planId}"]`);
-        if (button) button.disabled = true;
-
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await handleCheckout(stripePriceId);
+        handleCheckout(stripePriceId);
       }
     } catch (error) {
-      console.error('Plan selection failed:', error);
-      alert(error.message || 'Failed to process payment. Please try again.');
+      console.error('Error selecting plan:', error);
     } finally {
-      const button = document.querySelector(`button[data-plan-id="${planId}"]`);
-      if (button) button.disabled = false;
       setIsLoadingButton(false); // Reset loading state
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center p-6"><p className="text-lg">{translate("loading")}</p></div>;
-  }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-b from-gray-50 to-white">
       <div className="text-center mb-8 sm:mb-12">
@@ -185,21 +157,12 @@ const Plans = () => {
                     <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{plan.description}</p>
                     <div className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                       <div className="flex items-center text-gray-700">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                        </svg>
                         <span className="text-sm sm:text-base">{translate("teamSize")}: {plan.team_size}</span>
                       </div>
                       <div className="flex items-center text-gray-700">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                        </svg>
                         <span className="text-sm sm:text-base">{translate("maxServices")}: {plan.max_services}</span>
                       </div>
                       <div className="flex items-center text-gray-700">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                        </svg>
                         <span className="text-sm sm:text-base">{translate("maxOffers")}: {plan.max_offers}</span>
                       </div>
                     </div>

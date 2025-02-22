@@ -91,10 +91,32 @@ const Sidebar = () => {
   const handleNavigation = (e, path) => {
     if (currentPlan === "No Plan" && path !== "/dashboard/subscription") {
       e.preventDefault();
-      navigate('/dashboard/subscription');
+      if (currentBusiness.id) {
+        navigate('/dashboard/subscription'); // Redirect to subscription page
+      } else {
+        console.error("No valid business ID found.");
+      }
+    } else if (!isValidPath(path)) {
+      e.preventDefault();
+      navigate('/404'); // Redirect to a custom 404 page or NotFoundPage
+    } else {
+      navigate(path);
     }
-    // Close mobile menu after navigation
     setIsMobileMenuOpen(false);
+  };
+
+  const isValidPath = (path) => {
+    const validPaths = [
+      "/dashboard",
+      "/dashboard/team",
+      "/dashboard/settings",
+      "/dashboard/reservations",
+      "/dashboard/services",
+      "/dashboard/offers",
+      "/dashboard/subscription",
+      // Add other valid paths here
+    ];
+    return validPaths.includes(path);
   };
 
   return (

@@ -15,6 +15,12 @@ const BusinessPage = () => {
 
   useEffect(() => {
     const fetchBusinessData = async () => {
+      // Check if the id corresponds to a non-business route
+      if (id === "dashboard") { // Exclude the dashboard or any other non-business routes
+        navigate('/dashboard'); // Redirect to the dashboard
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("Business")

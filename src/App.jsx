@@ -49,8 +49,10 @@ const App = () => {
 
     // Prevent page reload on tab focus
     const handleVisibilityChange = () => {
-      // Do nothing when visibility changes
-      return;
+      if (document.visibilityState === 'visible') {
+        // Prevent reload on tab focus
+        window.history.pushState(null, '', window.location.href);
+      }
     };
 
     // Add visibility change listener

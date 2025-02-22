@@ -102,22 +102,52 @@ const CreateBusiness = () => {
 
       console.log("Created business:", createdBusiness);
 
+      // Set the selected business in local storage
+      const firstBusiness = { id: createdBusiness.id, name: createdBusiness.name };
+      localStorage.setItem("selectedBusiness", JSON.stringify(firstBusiness));
+
       if (!createdBusiness.theme || !createdBusiness.themeData) {
         console.error('Theme or themeData is null in created business');
       }
 
       // Add user to BusinessTeam
-      const { error: businessTeamError } = await supabase
+      const { data: businessTeam, error: businessTeamError } = await supabase
         .from("BusinessTeam")
         .insert([{
           businessId: createdBusiness.id,
           userId: user.id,
         }])
-        .select();
+        .select()
+        .single();
 
       if (businessTeamError) {
         console.error('BusinessTeam Error:', businessTeamError);
         throw new Error(businessTeamError.message);
+      }
+
+      // Fetch all permissions
+      const { data: permissions, error: permissionsError } = await supabase
+        .from("Permissions")
+        .select("id");
+
+      if (permissionsError) {
+        console.error('Permissions Error:', permissionsError);
+        throw new Error(permissionsError.message);
+      }
+
+      // Create BusinessTeam_Permissions entries
+      const permissionEntries = permissions.map(permission => ({
+        businessTeamId: businessTeam.id,
+        permissionId: permission.id
+      }));
+
+      const { error: teamPermissionsError } = await supabase
+        .from("BusinessTeam_Permissions")
+        .insert(permissionEntries);
+
+      if (teamPermissionsError) {
+        console.error('BusinessTeam_Permissions Error:', teamPermissionsError);
+        throw new Error(teamPermissionsError.message);
       }
 
       // Navigate to dashboard after a delay

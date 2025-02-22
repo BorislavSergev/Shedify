@@ -4,31 +4,36 @@ import supabase from "../hooks/supabase";
 import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
+import { useToast } from '../contexts/ToastContext';
 
 import { BACKEND_EMAIL_URL, FRONTEND_URL } from '../config/config';
 
 const Dashboard = () => {
   const { translate } = useLanguage();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stats, setStats] = useState({
-    pendingReservations: {
-      today: [],
-      upcoming: [],
-      past: []
-    },
-    acceptedReservations: {
-      today: [],
-      tomorrow: [],
-      thisWeek: [],
-      thisMonth: []
-    },
-    totalTeamMembers: 0,
-    totalOffers: 0,
-    recentReservations: [],
-    todayEarnings: 0,
-    totalTeamMemberReservations: 0,
-    totalBusinessReservations: 0
+  const [stats, setStats] = useState(() => {
+    const savedStats = localStorage.getItem('dashboardStats');
+    return savedStats ? JSON.parse(savedStats) : {
+      pendingReservations: {
+        today: [],
+        upcoming: [],
+        past: []
+      },
+      acceptedReservations: {
+        today: [],
+        tomorrow: [],
+        thisWeek: [],
+        thisMonth: []
+      },
+      totalTeamMembers: 0,
+      totalOffers: 0,
+      recentReservations: [],
+      todayEarnings: 0,
+      totalTeamMemberReservations: 0,
+      totalBusinessReservations: 0
+    };
   });
 
   const [todayEarnings, setTodayEarnings] = useState(0);
@@ -85,162 +90,168 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedBusiness?.id && authenticatedUserId) {
-      fetchDashboardData();
-    }
-  }, [selectedBusiness?.id, authenticatedUserId]);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-
-      // Step 1: Fetch the employeeId
-      const { data: businessTeam, error: businessTeamError } = await supabase
-        .from('BusinessTeam')
-        .select('id')
-        .eq('businessId', selectedBusiness.id)
-        .eq('userId', authenticatedUserId)
-        .single();
-
-      if (businessTeamError) throw businessTeamError;
-
-      const employeeId = businessTeam?.id;
-      if (!employeeId) {
-        throw new Error('Employee ID not found');
+    const fetchDashboardData = async () => {
+      if (stats) {
+        setLoading(false);
+        return;
       }
 
-      // Fetch total reservations for team member
-      const { data: teamMemberReservations, error: teamMemberReservationsError } = await supabase
-        .from('Reservations')
-        .select('id')
-        .eq('employeeId', employeeId);
-
-      if (teamMemberReservationsError) throw teamMemberReservationsError;
-
-      // Fetch total reservations for business
-      const { data: businessReservations, error: businessReservationsError } = await supabase
-        .from('Reservations')
-        .select('id')
-        .eq('businessId', selectedBusiness.id);
-
-      if (businessReservationsError) throw businessReservationsError;
-
-      // Step 2: Fetch reservations
-      const { data: reservations, error: reservationsError } = await supabase
-        .from('Reservations')
-        .select(`
-          *,
-          BusinessTeam (
-            Users (
-              first_name,
-              last_name
-            )
-          )
-        `)
-        .eq('businessId', selectedBusiness.id)
-        .eq('employeeId', employeeId);
-
-      if (reservationsError) throw reservationsError;
-
-      // Step 3: Fetch services
-      // Step 4: Fetch offers
-      const { data: offers, error: offersError } = await supabase
-        .from('Offers')
-        .select('id')
-        .eq('team_member_id', employeeId);
-
-      if (offersError) throw offersError;
-
-      // Step 5: Fetch team members
-      const { data: teamMembers, error: teamMembersError } = await supabase
-        .from('BusinessTeam')
-        .select('id')
-        .eq('businessId', selectedBusiness.id);
-
-      if (teamMembersError) throw teamMembersError;
-
-      // Calculate today's earnings
-      const todayReservations = reservations.filter(reservation => {
-        const reservationDate = new Date(reservation.reservationAt);
-        return reservationDate >= startOfToday && reservationDate <= endOfToday;
-      });
-
-      const totalEarnings = todayReservations.reduce((acc, reservation) => 
-        acc + (reservation.totalPrice || 0), 0);
-      setTodayEarnings(totalEarnings);
-
-      // Updated reservation organization
-      const currentDate = new Date();
-      const organizedReservations = {
-        pending: {
-          today: [],
-          upcoming: [],
-          past: []
-        },
-        accepted: {
-          today: [],
-          tomorrow: [],
-          thisWeek: [],
-          thisMonth: []
-        }
-      };
-
-      reservations.forEach(reservation => {
-        const reservationDate = new Date(reservation.reservationAt);
+      try {
+        setLoading(true);
         
-        if (reservation.status === 'pending') {
-          if (isToday(reservationDate)) {
-            organizedReservations.pending.today.push(reservation);
-          } else if (reservationDate > currentDate) {
-            organizedReservations.pending.upcoming.push(reservation);
-          } else {
-            organizedReservations.pending.past.push(reservation);
-          }
-        } else if (reservation.status === 'approved') {
-          if (isToday(reservationDate)) {
-            organizedReservations.accepted.today.push(reservation);
-          } else if (isTomorrow(reservationDate)) {
-            organizedReservations.accepted.tomorrow.push(reservation);
-          } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
-            organizedReservations.accepted.thisWeek.push(reservation);
-          } else if (isThisMonth(reservationDate) && !isThisWeek(reservationDate)) {
-            organizedReservations.accepted.thisMonth.push(reservation);
-          }
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+        // Step 1: Fetch the employeeId
+        const { data: businessTeam, error: businessTeamError } = await supabase
+          .from('BusinessTeam')
+          .select('id')
+          .eq('businessId', selectedBusiness.id)
+          .eq('userId', authenticatedUserId)
+          .single();
+
+        if (businessTeamError) throw businessTeamError;
+
+        const employeeId = businessTeam?.id;
+        if (!employeeId) {
+          throw new Error('Employee ID not found');
         }
-      });
 
-      // Sort all reservation arrays by date
-      Object.keys(organizedReservations).forEach(status => {
-        Object.keys(organizedReservations[status]).forEach(timeframe => {
-          organizedReservations[status][timeframe].sort((a, b) => 
-            new Date(a.reservationAt) - new Date(b.reservationAt)
-          );
+        // Fetch total reservations for team member
+        const { data: teamMemberReservations, error: teamMemberReservationsError } = await supabase
+          .from('Reservations')
+          .select('id')
+          .eq('employeeId', employeeId);
+
+        if (teamMemberReservationsError) throw teamMemberReservationsError;
+
+        // Fetch total reservations for business
+        const { data: businessReservations, error: businessReservationsError } = await supabase
+          .from('Reservations')
+          .select('id')
+          .eq('businessId', selectedBusiness.id);
+
+        if (businessReservationsError) throw businessReservationsError;
+
+        // Step 2: Fetch reservations
+        const { data: reservations, error: reservationsError } = await supabase
+          .from('Reservations')
+          .select(`
+            *,
+            BusinessTeam (
+              Users (
+                first_name,
+                last_name
+              )
+            )
+          `)
+          .eq('businessId', selectedBusiness.id)
+          .eq('employeeId', employeeId);
+
+        if (reservationsError) throw reservationsError;
+
+        // Step 3: Fetch services
+        // Step 4: Fetch offers
+        const { data: offers, error: offersError } = await supabase
+          .from('Offers')
+          .select('id')
+          .eq('team_member_id', employeeId);
+
+        if (offersError) throw offersError;
+
+        // Step 5: Fetch team members
+        const { data: teamMembers, error: teamMembersError } = await supabase
+          .from('BusinessTeam')
+          .select('id')
+          .eq('businessId', selectedBusiness.id);
+
+        if (teamMembersError) throw teamMembersError;
+
+        // Calculate today's earnings
+        const todayReservations = reservations.filter(reservation => {
+          const reservationDate = new Date(reservation.reservationAt);
+          return reservationDate >= startOfToday && reservationDate <= endOfToday;
         });
-      });
 
-      setStats({
-        pendingReservations: organizedReservations.pending,
-        acceptedReservations: organizedReservations.accepted,
-        totalTeamMembers: teamMembers?.length || 0,
-        totalOffers: offers?.length || 0,
-        recentReservations: reservations.slice(-7) || [],
-        todayEarnings: totalEarnings,
-        totalTeamMemberReservations: teamMemberReservations?.length || 0,
-        totalBusinessReservations: businessReservations?.length || 0
-      });
+        const totalEarnings = todayReservations.reduce((acc, reservation) => 
+          acc + (reservation.totalPrice || 0), 0);
+        setTodayEarnings(totalEarnings);
 
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Updated reservation organization
+        const currentDate = new Date();
+        const organizedReservations = {
+          pending: {
+            today: [],
+            upcoming: [],
+            past: []
+          },
+          accepted: {
+            today: [],
+            tomorrow: [],
+            thisWeek: [],
+            thisMonth: []
+          }
+        };
+
+        reservations.forEach(reservation => {
+          const reservationDate = new Date(reservation.reservationAt);
+          
+          if (reservation.status === 'pending') {
+            if (isToday(reservationDate)) {
+              organizedReservations.pending.today.push(reservation);
+            } else if (reservationDate > currentDate) {
+              organizedReservations.pending.upcoming.push(reservation);
+            } else {
+              organizedReservations.pending.past.push(reservation);
+            }
+          } else if (reservation.status === 'approved') {
+            if (isToday(reservationDate)) {
+              organizedReservations.accepted.today.push(reservation);
+            } else if (isTomorrow(reservationDate)) {
+              organizedReservations.accepted.tomorrow.push(reservation);
+            } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
+              organizedReservations.accepted.thisWeek.push(reservation);
+            } else if (isThisMonth(reservationDate) && !isThisWeek(reservationDate)) {
+              organizedReservations.accepted.thisMonth.push(reservation);
+            }
+          }
+        });
+
+        // Sort all reservation arrays by date
+        Object.keys(organizedReservations).forEach(status => {
+          Object.keys(organizedReservations[status]).forEach(timeframe => {
+            organizedReservations[status][timeframe].sort((a, b) => 
+              new Date(a.reservationAt) - new Date(b.reservationAt)
+            );
+          });
+        });
+
+        const fetchedStats = {
+          pendingReservations: organizedReservations.pending,
+          acceptedReservations: organizedReservations.accepted,
+          totalTeamMembers: teamMembers?.length || 0,
+          totalOffers: offers?.length || 0,
+          recentReservations: reservations.slice(-7) || [],
+          todayEarnings: totalEarnings,
+          totalTeamMemberReservations: teamMemberReservations?.length || 0,
+          totalBusinessReservations: businessReservations?.length || 0
+        };
+
+        setStats(fetchedStats);
+        localStorage.setItem('dashboardStats', JSON.stringify(fetchedStats));
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError(error.message);
+        showToast(translate('errorFetchingData'), 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [selectedBusiness?.id, authenticatedUserId]);
 
   const handleStatusUpdate = async (reservationId, newStatus) => {
     try {

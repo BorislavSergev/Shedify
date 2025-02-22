@@ -111,7 +111,7 @@ const Reservations = () => {
         if (selectedBusiness?.id) {
           const { data, error } = await supabase
             .from("Business")
-            .select("*, themeData, language")
+            .select("*, Plans(plan_name), planId, themeData, language")
             .eq("id", selectedBusiness.id)
             .single();
 
@@ -120,8 +120,8 @@ const Reservations = () => {
           setBusinessLanguage(data.language || 'english');
 
           // Check if the business has a plan
-          if (!data.plan) { // Assuming 'plan' is the field that indicates the business plan
-            navigate('/subscription'); // Redirect to subscription page
+          if (!data.planId) {
+            navigate('/dashboard/subscription');
           }
         }
       } catch (err) {
@@ -133,13 +133,11 @@ const Reservations = () => {
   }, [selectedBusiness?.id]);
 
   useEffect(() => {
-    // First, get the current user
     const getCurrentUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Session:", session); // Debug log
-        if (session?.user) {
-          setCurrentUser(session.user.id);
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.id) {
+          setCurrentUser(user.id);
           if (selectedBusiness?.id) {
             fetchReservations();
           }
@@ -157,7 +155,6 @@ const Reservations = () => {
     getCurrentUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", session); // Debug log
       setCurrentUser(session?.user.id || null);
     });
 
@@ -167,8 +164,6 @@ const Reservations = () => {
   }, []);
 
   useEffect(() => {
-    console.log("Current user:", currentUser); // Debug log
-    console.log("Current business:", selectedBusiness.id); // Debug log
     if (currentUser && selectedBusiness?.id) {
       fetchReservations();
     }
