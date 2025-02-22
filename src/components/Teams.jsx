@@ -516,6 +516,32 @@ const Teams = () => {
     actions: "flex justify-end space-x-3 mt-4 pt-4 border-t"
   };
 
+  // Fetch invitation details
+  const fetchInvitationDetails = async (businessInviteId) => {
+    try {
+      const { data, error } = await supabase
+        .from("businessteaminvites")
+        .select("*")
+        .eq("id", businessInviteId)
+        .single(); // Expect a single row
+
+      if (error) {
+        console.error("Error fetching invitation details:", error);
+        return; // Handle error
+      }
+
+      if (!data) {
+        console.error("No invitation found for the provided ID.");
+        return; // Handle no data case
+      }
+
+      // Proceed with using the invitation data
+      // ...
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
+  };
+
   return (
     <div className="p-6 bg-primary min-h-screen">
       <h2 className="text-4xl font-bold text-accent mb-6">{translate('manageTeam')}</h2>
