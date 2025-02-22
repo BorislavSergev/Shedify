@@ -725,7 +725,7 @@ const Teams = () => {
                       </td>
                       <td className="p-4">
                         <div className="flex justify-center items-center space-x-3">
-                          {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && (
+                          {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
                             <button
                               onClick={() => openPermissionsDialog(member)}
                               className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
@@ -734,7 +734,7 @@ const Teams = () => {
                               <FaEdit className="w-5 h-5" />
                             </button>
                           )}
-                          {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && (
+                          {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
                             <button
                               onClick={() => {
                                 setMemberToDelete(member);
@@ -776,7 +776,7 @@ const Teams = () => {
                   </div>
 
                   <div className={cardStyles.actions}>
-                    {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && (
+                    {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
                       <button
                         onClick={() => openPermissionsDialog(member)}
                         className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
@@ -785,7 +785,7 @@ const Teams = () => {
                         <FaEdit className="w-5 h-5" />
                       </button>
                     )}
-                    {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && (
+                    {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
                       <button
                         onClick={() => {
                           setMemberToDelete(member);
