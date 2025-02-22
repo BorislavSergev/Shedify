@@ -279,6 +279,8 @@ const Teams = () => {
         setShowAddMember(false);
         await fetchPendingInvites();
         showToast(`Invitation sent to ${newMember.email}`, 'success');
+
+        // Redirect to the team members page or dashboard
       } catch (emailError) {
         // If email fails, delete the invite
         await supabase
