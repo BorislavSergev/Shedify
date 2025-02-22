@@ -874,7 +874,7 @@ const Teams = () => {
                             )}
 
                             {/* Edit Permissions Button - Hidden for owner and current user */}
-                            {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.EDIT_PERMISSIONS) && (
+                            {!isCurrentUser && !memberIsOwner && (
                               <button
                                 onClick={() => openPermissionsDialog(member)}
                                 className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
@@ -885,7 +885,7 @@ const Teams = () => {
                             )}
 
                             {/* Delete Button - Hidden for owner and current user */}
-                            {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.MANAGE_TEAM) && (
+                            {!isCurrentUser && !memberIsOwner && (
                               <button
                                 onClick={() => {
                                   setMemberToDelete(member);
@@ -954,7 +954,7 @@ const Teams = () => {
                       )}
 
                       {/* Edit Permissions Button - Hidden for owner and current user */}
-                      {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.EDIT_PERMISSIONS) && (
+                      {!isCurrentUser && !memberIsOwner && (
                         <button
                           onClick={() => openPermissionsDialog(member)}
                           className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
@@ -965,7 +965,7 @@ const Teams = () => {
                       )}
 
                       {/* Delete Button - Hidden for owner and current user */}
-                      {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.MANAGE_TEAM) && (
+                      {!isCurrentUser && !memberIsOwner && (
                         <button
                           onClick={() => {
                             setMemberToDelete(member);

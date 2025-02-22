@@ -27,20 +27,14 @@ const Settings = () => {
   }, []);
 
   useEffect(() => {
-    console.log("Selected Business ID:", selectedBusiness?.id);
     if (selectedBusiness?.id) {
       fetchUserPermissions().then((hasViewAccess) => {
-        console.log("Has View Access:", hasViewAccess);
-        if (hasViewAccess) {
-          fetchBusinessDetails();
-          fetchWorkTime();
-          fetchThemes();
-          fetchBufferTime();
-        }
-        
-        if (!hasPermission('settings_general')) {
+        if (!hasViewAccess)
           setActiveTab("worktime");
-        }
+        fetchBusinessDetails();
+        fetchWorkTime();
+        fetchThemes();
+        fetchBufferTime();
       });
     }
   }, [selectedBusiness?.id]);
@@ -76,7 +70,7 @@ const Settings = () => {
       setUserPermissions(permissions);
 
       const hasViewAccess = permissionsData.some(p =>
-        p.Permissions.permission === 'view_settings'
+        p.Permissions.permission === 'settings_general'
       );
 
       return hasViewAccess;
@@ -87,7 +81,6 @@ const Settings = () => {
   };
 
   const fetchBusinessDetails = async () => {
-    console.log("Fetching business details for ID:", selectedBusiness.id);
     if (!selectedBusiness.id) return;
     try {
       setIsLoading(true);
@@ -97,7 +90,6 @@ const Settings = () => {
         .eq("id", selectedBusiness.id)
         .single();
 
-      console.log("Raw Supabase Response:", data);
 
       if (error) {
         console.error("Supabase Error:", error);
@@ -105,7 +97,6 @@ const Settings = () => {
       }
 
       if (!data.planId) {
-        console.log("No plan ID found, navigating to subscription");
         navigate('/subscription');
         return;
       }
