@@ -31,14 +31,14 @@ const BusinessPage = () => {
         if (error) {
           // Handle case when business is not found or other errors
           if (error.code === 'PGRST116') { // Supabase code for no rows returned
-            navigate('/business/' + id + '/404');
+            navigate(id + '/404');
             return;
           }
           throw error;
         }
 
         if (data.visibility === false) {
-          navigate('/business/' + id + "/404");
+          navigate(id + "/404");
           return;
         }
 
@@ -47,7 +47,7 @@ const BusinessPage = () => {
         setLoading(false);
       } catch (err) {
         console.error(err);
-        navigate('/business/' + id + '/404');
+        navigate(id + '/404');
       }
     };
 
