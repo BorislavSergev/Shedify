@@ -561,6 +561,21 @@ const Teams = () => {
     }
   };
 
+  const handleTransferOwnership = async (newOwnerId) => {
+    try {
+      const { error } = await supabase
+        .from("Business")
+        .update({ owner_id: newOwnerId })
+        .eq("id", selectedBusiness.id);
+
+      if (error) throw new Error(error.message);
+
+      showToast('Ownership transferred successfully', 'success');
+    } catch (error) {
+      showToast(error.message || 'Error transferring ownership', 'error');
+    }
+  };
+
   return (
     <div className="p-6 bg-primary min-h-screen">
       <h2 className="text-4xl font-bold text-accent mb-6">{translate('manageTeam')}</h2>
@@ -633,7 +648,7 @@ const Teams = () => {
           </div>
           <div className="mb-4">
             <label className="block mb-3 text-sm font-medium text-gray-700">{translate('permissions')}</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               {permissionsList.map((permission) => (
                 <label key={permission.id} className="flex items-center">
                   <input

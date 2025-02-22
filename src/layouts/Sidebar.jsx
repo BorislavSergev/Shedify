@@ -36,7 +36,7 @@ const Sidebar = () => {
 
         const { data: selectedBusiness, error: businessError } = await supabase
           .from("Business")
-          .select("planId, Plans(plan_name)")
+          .select("planId, Plans(plan_name), owner_id")
           .eq("id", currentBusiness.id)
           .single();
 
@@ -48,6 +48,10 @@ const Sidebar = () => {
         }
 
         setCurrentPlan(selectedBusiness?.Plans?.plan_name || "Unknown Plan");
+
+        if (user.id !== selectedBusiness.owner_id) {
+          setCurrentPlan("Not Authorized");
+        }
       } catch (error) {
         console.error("Error fetching plan:", error);
         setCurrentPlan("Error loading plan");
@@ -214,15 +218,19 @@ const Sidebar = () => {
             </Link>
         <div className="p-4 border-t border-gray-200">
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-gray-500">
-              {translate('plan')}: <span className={currentPlan === translate('noPlan') ? "text-red-500 font-medium" : ""}>{currentPlan}</span>
-            </p>
-            <button
-              className="w-full px-4 py-2 text-sm text-white bg-accent rounded-md shadow hover:bg-accentHover transition"
-              onClick={handleManageSubscription}
-            >
-              {translate('manageSubscription')}
-            </button>
+            {currentPlan !== "Not Authorized" && (
+              <>
+                <p className="text-sm text-gray-500">
+                  {translate('plan')}: <span className={currentPlan === translate('noPlan') ? "text-red-500 font-medium" : ""}>{currentPlan}</span>
+                </p>
+                <button
+                  className="w-full px-4 py-2 text-sm text-white bg-accent rounded-md shadow hover:bg-accentHover transition"
+                  onClick={handleManageSubscription}
+                >
+                  {translate('manageSubscription')}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </aside>
