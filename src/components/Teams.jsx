@@ -542,6 +542,32 @@ const Teams = () => {
     }
   };
 
+  const acceptInvite = async (token, businessId) => {
+    try {
+      const { data, error } = await supabase
+        .from("businessteaminvites")
+        .select("*")
+        .eq("token", token)
+        .eq("businessid", businessId)
+        .single(); // Expect a single row
+
+      if (error) {
+        console.error("Error fetching invitation details:", error);
+        return; // Handle error
+      }
+
+      if (!data) {
+        console.error("No invitation found for the provided token and business ID.");
+        return; // Handle no data case
+      }
+
+      // Proceed with accepting the invite (e.g., add user to the business)
+      // ...
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
+  };
+
   return (
     <div className="p-6 bg-primary min-h-screen">
       <h2 className="text-4xl font-bold text-accent mb-6">{translate('manageTeam')}</h2>

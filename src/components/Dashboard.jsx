@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import supabase from "../hooks/supabase";
 import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
 import { useLanguage } from '../contexts/LanguageContext';
@@ -68,6 +68,8 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteDetails, setInviteDetails] = useState(null);
+
+  const navigate = useNavigate();
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -516,7 +518,7 @@ const Dashboard = () => {
 
       // Update UI
       setShowInviteDialog(false);
-      window.location.href = '/dashboard'; // Refresh to update the UI
+      navigate('/dashboard'); // This will navigate to the dashboard without a full page reload
     } catch (error) {
       console.error('Error accepting invitation:', error);
       alert(translate('errorAcceptingInvitation'));
@@ -538,7 +540,7 @@ const Dashboard = () => {
 
       // Update UI
       setShowInviteDialog(false);
-      window.location.href = '/dashboard'; // Refresh to update the UI
+      navigate('/dashboard'); // Refresh to update the UI
     } catch (error) {
       console.error('Error declining invitation:', error);
       alert(translate('errorDecliningInvitation'));

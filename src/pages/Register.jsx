@@ -99,6 +99,11 @@ const Register = () => {
 
         if (updateError) throw updateError;
 
+        // If there's an invite, accept it
+        if (inviteToken) {
+          await handleAcceptInvite(user.id);
+        }
+
         // Show confirmation message instead of the form
         setShowConfirmation(true);
       }
@@ -110,7 +115,7 @@ const Register = () => {
     }
   };
 
-  const handleAcceptInvite = async () => {
+  const handleAcceptInvite = async (userId) => {
     try {
       const { data: inviteData, error: inviteError } = await supabase
         .from("businessteaminvites")
@@ -125,7 +130,7 @@ const Register = () => {
         .from("BusinessTeam")
         .insert([{
           businessId: inviteBusiness.id,
-          userId: signUpData.user.id,
+          userId: userId,
           worktime: null,
           bufferTime: null
         }])
@@ -195,7 +200,7 @@ const Register = () => {
         ) : (
           <>
             <h2 className="text-2xl font-bold text-center mb-6">
-              {isBusinessInvite ? "Приемете покана за екип" : "Създайте акаунт"}
+              {inviteToken ? "Приемете покана за екип" : "Създайте акаунт"}
             </h2>
             {errorMessages.length > 0 && (
               <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
