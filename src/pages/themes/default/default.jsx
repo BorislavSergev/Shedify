@@ -47,6 +47,13 @@ const Default = ({ previewData }) => {
           <meta name="keywords" content={previewData?.seo?.keywords || ""} />
           <meta property="og:title" content={previewData?.seo?.title || ""} />
           <meta property="og:description" content={previewData?.seo?.description || ""} />
+          <meta property="description" content={previewData?.seo?.description || ""} />
+          <meta
+          name={previewData?.seo?.title}
+          content={previewData?.seo?.description}
+          data-rh="true"
+          />
+
           <meta property="og:image" content={previewData?.seo?.ogImage || ""} />
         </Helmet>
 
