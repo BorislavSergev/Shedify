@@ -237,7 +237,6 @@ const MyProfile = () => {
         <div className="p-8 space-y-8">
           {/* Personal Information Section */}
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">{translate('businessDetails')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">{translate('avatar')}</label>

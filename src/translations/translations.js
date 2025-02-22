@@ -471,13 +471,17 @@ export const translations = {
     manage_permisisons: "Управление на разрешения",
     manage_themes: "Управление на теми",
     owner: "Собственик",
-
-    
-
+    confirmTransferOwnership: "Потвърди прехвърляне на собствеността",
+    transferOwnershipWarning: "След като прехвърлите собствеността, няма да можете да върнете обратно. Сигурни ли сте, че желаете да прехвърлите собствеността?",
+    transfer: "Прехвърляне",
 
 
   },
   en: {
+    transfer: "Transfer",
+    confirmTransferOwnership: "Confirm Transfer Ownership",
+    transferOwnershipWarning: "After transferring ownership, you will not be able to revert back. Are you sure you want to transfer ownership?",
+    
     //Permissions
     settings_general: "Manage General Settings",
     manage_delete: "Manage Delete",
