@@ -322,6 +322,11 @@ const Teams = () => {
   };
 
   const openPermissionsDialog = (member) => {
+    // Check if the member is the owner
+    if (member.userId === selectedBusiness.owner_id) {
+      return; // Do not open the dialog for the owner
+    }
+
     setEditingMemberPermissions({
       ...member,
       permissions: member.BusinessTeam_Permissions.map((p) => p.permissionId),
