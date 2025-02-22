@@ -201,19 +201,16 @@ const Teams = () => {
       return;
     }
 
-    // Check if already submitting
-    if (isSubmitting) {
-      return;
-    }
+    if (isSubmitting) return;
 
-    // Check team size limit before proceeding
+    // Check team size limit
     if (teamSizeLimit !== -1 && totalPendingAndActive >= teamSizeLimit) {
       showToast('Team size limit reached. Please upgrade your plan.', 'error');
       navigate("/dashboard/subscription");
       return;
     }
 
-    // Check if email is already invited
+    // Check existing invites
     const existingInvite = pendingInvites.find(
       invite => invite.email.toLowerCase() === newMember.email.toLowerCase()
     );
@@ -222,7 +219,7 @@ const Teams = () => {
       return;
     }
 
-    // Check if email is already a team member
+    // Check existing members
     const existingMember = teamMembers.find(
       member => member.Users.email.toLowerCase() === newMember.email.toLowerCase()
     );
@@ -234,27 +231,14 @@ const Teams = () => {
     try {
       setIsSubmitting(true);
       
-      // Check if user exists
-      const { data: userData, error: userError } = await supabase
-        .from("Users")
-        .select("id")
-        .eq("email", newMember.email)
-        .single();
-
-      if (userError && userError.code !== 'PGRST116') {
-        throw userError;
-      }
-
-      if (userData) {
-        navigate(`/dashboard?token=${userData.id}&business=${selectedBusiness.id}`); // Redirect to accept invite
-        return; // Exit the function after redirecting
-      }
-
+      // Generate invite token
       const token = uuidv4();
+
+      // Create the invite first
       const { error: inviteError } = await supabase
         .from("businessteaminvites")
         .insert([{
-          email: newMember.email.toLowerCase(), // Store email in lowercase
+          email: newMember.email.toLowerCase(),
           businessid: selectedBusiness.id,
           permissions: newMember.permissions,
           token: token
@@ -262,13 +246,20 @@ const Teams = () => {
 
       if (inviteError) throw new Error(inviteError.message);
 
-      // Generate invite link
-      const inviteLink = `${FRONTEND_URL}/${userData ? 'dashboard' : 'register'}?token=${token}&business=${selectedBusiness.id}`;
+      // Check if user exists
+      const { data: userData } = await supabase
+        .from("Users")
+        .select("id")
+        .eq("email", newMember.email)
+        .single();
+
+      // Generate invite link based on whether user exists
+      const inviteLink = `${FRONTEND_URL}${userData ? '/dashboard' : '/register'}?token=${token}&business=${selectedBusiness.id}`;
 
       try {
-        // Send invite email with timeout
+        // Send invite email
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await axios.post(`${BACKEND_EMAIL_URL}/invite-team-member`, {
           business: selectedBusiness.name,
@@ -283,8 +274,13 @@ const Teams = () => {
         if (response.status !== 200) {
           throw new Error('Failed to send invitation email');
         }
+
+        setNewMember({ email: "", permissions: [] });
+        setShowAddMember(false);
+        await fetchPendingInvites();
+        showToast(`Invitation sent to ${newMember.email}`, 'success');
       } catch (emailError) {
-        // If email fails, delete the invite from the database
+        // If email fails, delete the invite
         await supabase
           .from("businessteaminvites")
           .delete()
@@ -292,11 +288,6 @@ const Teams = () => {
         
         throw new Error('Failed to send invitation email. Please try again.');
       }
-
-      setNewMember({ email: "", permissions: [] });
-      setShowAddMember(false);
-      await fetchPendingInvites(); // Refresh pending  invites
-      showToast(`Invitation sent to ${newMember.email}`, 'success');
     } catch (error) {
       showToast(error.message || 'Error sending invitation', 'error');
     } finally {
