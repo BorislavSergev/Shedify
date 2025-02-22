@@ -66,12 +66,12 @@ const Sidebar = () => {
     const handleClickOutside = (event) => {
       const sidebar = document.querySelector('aside');
       const menuButton = document.querySelector('[data-menu-button]');
-      
-      if (isMobileMenuOpen && 
-          sidebar && 
-          !sidebar.contains(event.target) && 
-          menuButton && 
-          !menuButton.contains(event.target)) {
+
+      if (isMobileMenuOpen &&
+        sidebar &&
+        !sidebar.contains(event.target) &&
+        menuButton &&
+        !menuButton.contains(event.target)) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -126,9 +126,8 @@ const Sidebar = () => {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full w-52 bg-white text-gray-700 shadow-2xl z-20 transform transition-transform duration-300 flex flex-col overflow-y-auto ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:relative md:shadow-md`}
+        className={`fixed top-0 left-0 h-full w-52 bg-white text-gray-700 shadow-2xl z-20 transform transition-transform duration-300 flex flex-col overflow-y-auto ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0 md:relative md:shadow-md`}
       >
         <h1 className="text-3xl font-bold text-accent mb-8 text-center mt-6">Shedify</h1>
         <div className="flex-1 flex flex-col gap-6">
@@ -136,9 +135,8 @@ const Sidebar = () => {
             <Link
               to="/dashboard"
               onClick={(e) => handleNavigation(e, "/dashboard")}
-              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
-                isActive("/dashboard") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
+              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${isActive("/dashboard") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+                }`}
             >
               <MdDashboard className="w-6 h-6 mr-3" />
               <span>{translate('dashboard')}</span>
@@ -146,9 +144,8 @@ const Sidebar = () => {
             <Link
               to="/dashboard/team"
               onClick={(e) => handleNavigation(e, "/dashboard/team")}
-              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
-                isActive("/dashboard/team") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
+              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${isActive("/dashboard/team") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+                }`}
             >
               <BsFillPeopleFill className="w-5 h-5 mr-3" />
               <span>{translate('teams')}</span>
@@ -156,9 +153,8 @@ const Sidebar = () => {
             <Link
               to="/dashboard/settings"
               onClick={(e) => handleNavigation(e, "/dashboard/settings")}
-              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
-                isActive("/dashboard/settings") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
+              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${isActive("/dashboard/settings") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+                }`}
             >
               <FaCogs className="w-6 h-6 mr-3" />
               <span>{translate('settings')}</span>
@@ -176,9 +172,8 @@ const Sidebar = () => {
             <Link
               to="/dashboard/reservations"
               onClick={(e) => handleNavigation(e, "/dashboard/reservations")}
-              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
-                isActive("/dashboard/reservations") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
+              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${isActive("/dashboard/reservations") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+                }`}
             >
               <FaClock className="w-5 h-5 mr-3" />
               <span>{translate('reservations')}</span>
@@ -186,9 +181,8 @@ const Sidebar = () => {
             <Link
               to="/dashboard/services"
               onClick={(e) => handleNavigation(e, "/dashboard/services")}
-              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
-                isActive("/dashboard/services") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
+              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${isActive("/dashboard/services") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+                }`}
             >
               <FaClipboardList className="w-5 h-5 mr-3" />
               <span>{translate('services')}</span>
@@ -196,9 +190,8 @@ const Sidebar = () => {
             <Link
               to="/dashboard/offers"
               onClick={(e) => handleNavigation(e, "/dashboard/offers")}
-              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${
-                isActive("/dashboard/offers") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
+              className={`flex items-center text-lg py-2 px-4 rounded-md transition ${isActive("/dashboard/offers") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+                }`}
             >
               <BiSolidOffer className="w-5 h-5 mr-3" />
               <span>{translate('offers')}</span>
@@ -207,15 +200,15 @@ const Sidebar = () => {
         </div>
 
         <Link
-              to={`/${currentBusiness.id}`}
-              onClick={(e) => handleNavigation(e, "/business")}
-              className={`flex items-center text-lg py-4 px-6 rounded-md transition ${
-                isActive("/business") ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
-              }`}
-            >
-              <CiShare1 className="w-5 h-5 mr-3" />
-              <span>{translate('viewStore')}</span>
-            </Link>
+          to={`/${currentBusiness.id}`}
+          onClick={(e) => handleNavigation(e, `/${currentBusiness.id}`)}
+          className={`flex items-center text-lg py-4 px-6 rounded-md transition ${isActive(`/business/${currentBusiness.id}`) ? "bg-gray-100 text-accent" : "hover:bg-gray-100 hover:text-accent"
+            }`}
+        >
+          <CiShare1 className="w-5 h-5 mr-3" />
+          <span>{translate('viewStore')}</span>
+        </Link>
+        
         <div className="p-4 border-t border-gray-200">
           <div className="flex flex-col gap-2">
             {currentPlan !== "Not Authorized" && (
