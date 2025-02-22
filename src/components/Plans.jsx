@@ -11,6 +11,7 @@ const Plans = () => {
   const [loading, setLoading] = useState(true);
   const { handleCheckout } = useStripeCheckout(); // Stripe checkout function
   const [isLoadingButton, setIsLoadingButton] = useState(false); // New state for button loading
+  const [isManageLoading, setIsManageLoading] = useState(false); // Add new state for manage subscription button
 
   const selectedBusiness = useMemo(() => {
     try {
@@ -62,6 +63,7 @@ const Plans = () => {
   }, [selectedBusiness.id]); // Only re-fetch if selectedBusiness.id changes
 
   const goToCustomerPortal = async () => {
+    setIsManageLoading(true); // Set loading state
     try {
       const response = await fetch('https://stripe.swiftabook.com/create-portal-session', {
         method: 'POST',
@@ -79,6 +81,8 @@ const Plans = () => {
       }
     } catch (error) {
       console.error('Error redirecting to Customer Portal:', error);
+    } finally {
+      setIsManageLoading(false); // Reset loading state
     }
   };
 
@@ -122,9 +126,20 @@ const Plans = () => {
         <div className="text-center mb-6 sm:mb-8">
           <button
             onClick={goToCustomerPortal}
-            className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+            disabled={isManageLoading}
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-accent text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {translate("manageSubscription")}
+            {isManageLoading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8-8-3.582-8-8z"></path>
+                </svg>
+                {translate("loading")}
+              </span>
+            ) : (
+              translate("manageSubscription")
+            )}
           </button>
         </div>
       )}

@@ -41,6 +41,7 @@ const Teams = () => {
   const [transferToMember, setTransferToMember] = useState(null);
   const [businessOwnerId, setBusinessOwnerId] = useState(null);
   const [businessOwnerEmail, setBusinessOwnerEmail] = useState(null); // State to hold owner's email
+  const [businessDetails, setBusinessDetails] = useState(null); // State to hold business details
 
   const navigate = useNavigate(); // For navigation to the subscription page
 
@@ -323,11 +324,6 @@ const Teams = () => {
   };
 
   const openPermissionsDialog = (member) => {
-    // Check if the member is the owner
-    if (member.userId === selectedBusiness.owner_id) {
-      return; // Do not open the dialog for the owner
-    }
-
     setEditingMemberPermissions({
       ...member,
       permissions: member.BusinessTeam_Permissions.map((p) => p.permissionId),
@@ -474,6 +470,25 @@ const Teams = () => {
     calculateTeamSizes();
   }, [teamMembers, pendingInvites]);
 
+  // Fetch business details for general settings
+  const fetchBusinessDetails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("Business")
+        .select("name, language, planId")
+        .eq("id", selectedBusiness.id)
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      // Set the business details in state or handle them as needed
+      setBusinessDetails(data);
+    } catch (error) {
+      console.error("Error fetching business details:", error);
+    }
+  };
+
+  // Update useEffect to include fetching business details
   useEffect(() => {
     if (selectedBusiness?.id) {
       fetchCurrentUser();
@@ -482,6 +497,7 @@ const Teams = () => {
       fetchUserPermissions();
       fetchBusinessPlan();
       fetchPendingInvites();
+      fetchBusinessDetails(); // Fetch business details for general settings
     }
   }, [selectedBusiness?.id]);
 
