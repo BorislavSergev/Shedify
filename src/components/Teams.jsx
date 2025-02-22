@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaEdit, FaTrashAlt } from "react-icons/fa";
+import { FaEdit, FaTrashAlt, FaUserShield } from "react-icons/fa";
 import { useNavigate } from "react-router-dom"; // To navigate to the subscription page
 import supabase from "../hooks/supabase"; // Import Supabase client
 import { track } from "framer-motion/client";
@@ -37,6 +37,10 @@ const Teams = () => {
   const [totalPendingAndActive, setTotalPendingAndActive] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [transferToMember, setTransferToMember] = useState(null);
+  const [businessOwnerId, setBusinessOwnerId] = useState(null);
+  const [businessOwnerEmail, setBusinessOwnerEmail] = useState(null); // State to hold owner's email
 
   const navigate = useNavigate(); // For navigation to the subscription page
 
@@ -297,11 +301,8 @@ const Teams = () => {
     }
   };
 
-  const hasPermission = (permissionName) => {
-    if (userPermissions.includes(1)) {
-      return true; // User has all permissions
-    }
-    return userPermissions.includes(permissionName);
+  const hasPermission = (member, permissionId) => {
+    return member.BusinessTeam_Permissions.some(permission => permission.permissionId === permissionId);
   };
 
   const handleRemoveMember = async () => {
@@ -487,11 +488,10 @@ const Teams = () => {
   // Update the permissions display in the team members table
   const renderPermissionsList = (permissions) => {
     const permissionNames = {
-      16: 'View Settings',
-      12: 'Manage General Settings',
-      13: 'Manage Work Time',
-      14: 'Manage Buffer Time',
-      15: 'Manage Themes'
+      12: translate("settings_general"),
+      13: translate("manage_delete"),
+      14: translate("manage_permisisons"),
+      15: translate("manage_themes"),
     };
 
     return permissions.map((permission) => (
@@ -566,20 +566,113 @@ const Teams = () => {
     }
   };
 
-  const handleTransferOwnership = async (newOwnerId) => {
+  // Add this function to handle ownership transfer
+  const handleTransferOwnership = async () => {
+    console.log("Transferring ownership to:", transferToMember);
     try {
+      if (!transferToMember) return;
+
       const { error } = await supabase
         .from("Business")
-        .update({ owner_id: newOwnerId })
+        .update({ owner_id: transferToMember.userId })
         .eq("id", selectedBusiness.id);
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
 
-      showToast('Ownership transferred successfully', 'success');
+      showToast(`Ownership transferred to ${transferToMember.Users.first_name}`, 'success');
+      setShowTransferDialog(false);
+      setTransferToMember(null);
+      // Refresh the page or redirect to reflect the changes
+      window.location.reload();
     } catch (error) {
-      showToast(error.message || 'Error transferring ownership', 'error');
+      console.error("Error transferring ownership:", error);
+      showToast('Error transferring ownership. Please try again.', 'error');
     }
   };
+
+  // Check if a member is the owner
+  const isOwner = (member) => {
+    return member.userId === businessOwnerId;
+  };
+
+  // Check if current user is the owner
+  const currentUserIsOwner = () => {
+    return currentUserId === businessOwnerId;
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        
+        console.log("Current User ID:", user.id);
+        setCurrentUserId(user.id);
+
+        // Fetch business to get owner_id
+        const { data: businessData, error: businessError } = await supabase
+          .from("Business")
+          .select("owner_id")
+          .eq("id", selectedBusiness.id)
+          .single();
+        
+        if (businessError) throw businessError;
+        
+        console.log("Business Data:", businessData);
+        console.log("Business Owner ID:", businessData.owner_id);
+        setBusinessOwnerId(businessData.owner_id);
+
+        // Fetch the owner's email
+        const { data: ownerData, error: ownerError } = await supabase
+          .from("Users")
+          .select("email")
+          .eq("id", businessData.owner_id)
+          .single();
+
+        if (ownerError) throw ownerError;
+
+        console.log("Business Owner Email:", ownerData.email); // Log the owner's email
+        setBusinessOwnerEmail(ownerData.email); // Store the owner's email
+
+        // Fetch team members with their user details
+        const { data: teamData, error: teamError } = await supabase
+          .from("BusinessTeam")
+          .select(`
+            id,
+            userId,
+            businessId,
+            Users (
+              id,
+              first_name,
+              last_name,
+              email,
+              avatar
+            ),
+            BusinessTeam_Permissions (
+              id,
+              permissionId,
+              Permissions (
+                id,
+                permission
+              )
+            )
+          `)
+          .eq("businessId", selectedBusiness.id);
+
+        if (teamError) throw teamError;
+        
+        console.log("Team Members:", teamData);
+        setTeamMembers(teamData);
+
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        showToast('Error loading team members', 'error');
+      }
+    };
+
+    fetchData();
+  }, [selectedBusiness.id]);
 
   return (
     <div className="p-6 bg-primary min-h-screen">
@@ -670,7 +763,7 @@ const Teams = () => {
                     }}
                     className="mr-2"
                   />
-                  {permission.permission}
+                  {translate(permission.permission)}
                 </label>
               ))}
             </div>
@@ -709,102 +802,169 @@ const Teams = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {teamMembers.map((member) => (
-                    <tr key={member.id} className="border-t hover:bg-gray-50">
-                      <td className="p-4">
-                        <div className="flex items-center justify-center">
-                          {getAvatarOrInitial(member)}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</span>
-                          <span className="text-sm text-gray-500">{member.Users.email}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">{member.Users.email}</td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap">
-                          {renderPermissionsList(member.BusinessTeam_Permissions)}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex justify-center items-center space-x-3">
-                          {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
-                            <button
-                              onClick={() => openPermissionsDialog(member)}
-                              className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
-                              title="Edit permissions"
-                            >
-                              <FaEdit className="w-5 h-5" />
-                            </button>
-                          )}
-                          {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
-                            <button
-                              onClick={() => {
-                                setMemberToDelete(member);
-                                setShowDeleteConfirmDialog(true);
-                              }}
-                              className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
-                              title="Delete member"
-                            >
-                              <FaTrashAlt className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {teamMembers.map((member) => {
+                    const memberIsOwner = isOwner(member);
+                    const userIsOwner = currentUserIsOwner();
+                    const isCurrentUser = member.userId === currentUserId; // Check if the member is the current user
+
+                    console.log("Rendering member:", {
+                      name: member.Users.first_name,
+                      isOwner: memberIsOwner,
+                      currentUserIsOwner: userIsOwner,
+                      isCurrentUser: isCurrentUser
+                    });
+
+                    return (
+                      <tr key={member.id} className="border-t hover:bg-gray-50">
+                        <td className="p-4">
+                          <div className="flex items-center justify-center">
+                            {getAvatarOrInitial(member)}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</span>
+                            <span className="text-sm text-gray-500">{member.Users.email}</span>
+                          </div>
+                        </td>
+                        <td className="p-4">{member.Users.email}</td>
+                        <td className="p-4">
+                          <div className="flex flex-wrap">
+                            {renderPermissionsList(member.BusinessTeam_Permissions)}
+                            
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex justify-center items-center space-x-3">
+                            {/* Owner Badge */}
+                            {memberIsOwner && (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                {translate('owner')}
+                              </span>
+                            )}
+                            
+                            {/* Transfer Ownership Button - Only visible to owner when viewing other members */}
+                            {userIsOwner && !memberIsOwner && (
+                              <button
+                                onClick={() => {
+                                  setTransferToMember(member);
+                                  setShowTransferDialog(true);
+                                }}
+                                className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-all duration-200"
+                                title={translate('transferOwnership')}
+                              >
+                                <FaUserShield className="w-5 h-5" />
+                              </button>
+                            )}
+
+                            {/* Edit Permissions Button - Hidden for owner and current user */}
+                            {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.EDIT_PERMISSIONS) && (
+                              <button
+                                onClick={() => openPermissionsDialog(member)}
+                                className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
+                                title="Edit permissions"
+                              >
+                                <FaEdit className="w-5 h-5" />
+                              </button>
+                            )}
+
+                            {/* Delete Button - Hidden for owner and current user */}
+                            {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.MANAGE_TEAM) && (
+                              <button
+                                onClick={() => {
+                                  setMemberToDelete(member);
+                                  setShowDeleteConfirmDialog(true);
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
+                                title="Delete member"
+                              >
+                                <FaTrashAlt className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-              {teamMembers.map((member) => (
-                <div key={member.id} className={cardStyles.base}>
-                  <div className={cardStyles.header}>
-                    {getAvatarOrInitial(member)}
-                    <div>
-                      <h4 className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</h4>
-                      <p className="text-sm text-gray-500">{member.Users.email}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={cardStyles.content}>
-                    <div>
-                      <p className={cardStyles.label}>{translate('permissions')}</p>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {renderPermissionsList(member.BusinessTeam_Permissions)}
+              {teamMembers.map((member) => {
+                const memberIsOwner = isOwner(member);
+                const userIsOwner = currentUserIsOwner();
+                const isCurrentUser = member.userId === currentUserId; // Check if the member is the current user
+
+                return (
+                  <div key={member.id} className={cardStyles.base}>
+                    <div className={cardStyles.header}>
+                      {getAvatarOrInitial(member)}
+                      <div>
+                        <h4 className="font-medium">{`${member.Users.first_name} ${member.Users.last_name}`}</h4>
+                        <p className="text-sm text-gray-500">{member.Users.email}</p>
                       </div>
                     </div>
-                  </div>
+                    
+                    <div className={cardStyles.content}>
+                      <div>
+                        <p className={cardStyles.label}>{translate('permissions')}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {renderPermissionsList(member.BusinessTeam_Permissions)}
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className={cardStyles.actions}>
-                    {hasPermission(PERMISSION_IDS.EDIT_PERMISSIONS) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
-                      <button
-                        onClick={() => openPermissionsDialog(member)}
-                        className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
-                        title="Edit permissions"
-                      >
-                        <FaEdit className="w-5 h-5" />
-                      </button>
-                    )}
-                    {hasPermission(PERMISSION_IDS.MANAGE_TEAM) && member.userId !== currentUserId && member.userId !== selectedBusiness.owner_id && (
-                      <button
-                        onClick={() => {
-                          setMemberToDelete(member);
-                          setShowDeleteConfirmDialog(true);
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
-                        title="Delete member"
-                      >
-                        <FaTrashAlt className="w-5 h-5" />
-                      </button>
-                    )}
+                    <div className={cardStyles.actions}>
+                      {memberIsOwner && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                          {translate('owner')}
+                        </span>
+                      )}
+                      
+                      {/* Transfer Ownership Button - Only visible to owner when viewing other members */}
+                      {userIsOwner && !memberIsOwner && (
+                        <button
+                          onClick={() => {
+                            setTransferToMember(member);
+                            setShowTransferDialog(true);
+                          }}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-all duration-200"
+                          title={translate('transferOwnership')}
+                        >
+                          <FaUserShield className="w-5 h-5" />
+                        </button>
+                      )}
+
+                      {/* Edit Permissions Button - Hidden for owner and current user */}
+                      {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.EDIT_PERMISSIONS) && (
+                        <button
+                          onClick={() => openPermissionsDialog(member)}
+                          className="p-2 text-accent hover:text-accentHover rounded-full transition-all duration-200"
+                          title="Edit permissions"
+                        >
+                          <FaEdit className="w-5 h-5" />
+                        </button>
+                      )}
+
+                      {/* Delete Button - Hidden for owner and current user */}
+                      {!memberIsOwner && !isCurrentUser && hasPermission(member, PERMISSION_IDS.MANAGE_TEAM) && (
+                        <button
+                          onClick={() => {
+                            setMemberToDelete(member);
+                            setShowDeleteConfirmDialog(true);
+                          }}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all duration-200"
+                          title="Delete member"
+                        >
+                          <FaTrashAlt className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         ) : (
@@ -1018,7 +1178,7 @@ const Teams = () => {
                     onChange={() => handlePermissionsChange(permission.id)}
                     className="w-4 h-4 text-accent rounded border-gray-300 focus:ring-accent"
                   />
-                  <span className="text-gray-700">{permission.permission}</span>
+                  <span className="text-gray-700">{translate(permission.permission)}</span>
                 </label>
               ))}
             </div>
@@ -1060,6 +1220,39 @@ const Teams = () => {
                 className="px-4 py-2 bg-red-500 text-white rounded-md"
               >
                 {translate('delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transfer Ownership Dialog */}
+      {showTransferDialog && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+              {translate('confirmTransferOwnership')}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {translate('transferOwnershipWarning', {
+                name: `${transferToMember?.Users?.first_name} ${transferToMember?.Users?.last_name}`
+              })}
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setShowTransferDialog(false);
+                  setTransferToMember(null);
+                }}
+                className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
+              >
+                {translate('cancel')}
+              </button>
+              <button
+                onClick={handleTransferOwnership}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                {translate('transfer')}
               </button>
             </div>
           </div>

@@ -463,8 +463,28 @@ export const translations = {
     failedToSaveEditedOffer: "Грешка при запазване на редактираната оферта",
     upgradePlanRequired: "Необходимо е да надградите плана си, за да създадете повече оферти",
     noPlanSelected: "Не е избран абонаментен план",
+
+
+    //Permissions
+    settings_general: "Управление на общи настройки",
+    manage_delete: "Премахване на служители",
+    manage_permisisons: "Управление на разрешения",
+    manage_themes: "Управление на теми",
+    owner: "Собственик",
+
+    
+
+
+
   },
   en: {
+    //Permissions
+    settings_general: "Manage General Settings",
+    manage_delete: "Manage Delete",
+    manage_permisisons: "Manage Permissions",
+    manage_themes: "Manage Themes",
+    owner: "Owner",
+
     // Payment & Subscription
     processingPayment: "Processing Payment",
     pleaseWait: "Please wait...",
