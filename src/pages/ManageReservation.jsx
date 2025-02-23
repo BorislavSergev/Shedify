@@ -93,7 +93,7 @@ const ManageReservation = () => {
         setIsRequestingCode(true);
         setError(null);
         
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/send-confirmation-code`, {
+        const response = await axios.post(`${BACKEND_EMAIL_URL}/send-confirmation-code`, {
           reservationId,
           email
         });
@@ -116,7 +116,7 @@ const ManageReservation = () => {
       setIsVerifyingCode(true);
       setError(null);
 
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/verify-confirmation-code`, {
+      const response = await axios.post(`${BACKEND_EMAIL_URL}/verify-confirmation-code`, {
         reservationId,
         email,
         code
@@ -144,7 +144,7 @@ const ManageReservation = () => {
       if (updateError) throw updateError;
 
       // Send cancellation email
-      await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/rejected-reservation`, {
+      await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
         name: `${reservation.firstName} ${reservation.lastName}`,
         business: business.name,
         email: reservation.email,
