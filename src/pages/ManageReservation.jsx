@@ -42,6 +42,7 @@ const ManageReservation = () => {
   const [businessLanguage, setBusinessLanguage] = useState('bulgarian');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [showCancelSuccess, setShowCancelSuccess] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -121,7 +122,7 @@ const ManageReservation = () => {
         reason: translate('cancelledByUser')
       });
 
-      alert(translate('reservationCancelledSuccess'));
+      setShowCancelSuccess(true);
       fetchReservation();
     } catch (err) {
       setError(translate('failedToCancelReservation'));
@@ -257,6 +258,14 @@ const ManageReservation = () => {
                 </h2>
                 <div className="w-16 h-1 mx-auto mb-8" style={themeStyles.accent}></div>
 
+                {reservation.status === 'cancelled' && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-red-600 text-center font-medium">
+                      {translate('reservationCancelledMessage')}
+                    </p>
+                  </div>
+                )}
+
                 <div className="bg-gray-50 rounded-xl p-6 mb-8">
                   <div className="grid gap-4">
                     <div className="flex items-center border-b border-gray-200 pb-3">
@@ -283,7 +292,9 @@ const ManageReservation = () => {
                     </div>
                     <div className="flex items-center border-b border-gray-200 pb-3">
                       <span className="text-gray-600 font-medium w-1/3">{translate('status')}:</span>
-                      <span className="text-gray-800 flex-1">{translate(reservation.status.toLowerCase())}</span>
+                      <span className={`flex-1 ${reservation.status === 'cancelled' ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                        {translate(reservation.status.toLowerCase())}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -312,6 +323,20 @@ const ManageReservation = () => {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {showCancelSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold">{translate('reservationCancelledSuccess')}</h3>
+            <button
+              onClick={() => setShowCancelSuccess(false)}
+              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
+            >
+              {translate('ok')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <footer 
         className="py-6 mt-auto text-white text-center"

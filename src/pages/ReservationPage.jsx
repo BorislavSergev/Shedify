@@ -848,10 +848,10 @@ const ReservationPage = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  No Services Available
+                  {translate('noServicesAvailable')}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  There are currently no services available for this team member.
+                  {translate('noServicesAvailableMessage')}
                 </p>
                 <button
                   onClick={() => setStep(1)}
@@ -871,7 +871,7 @@ const ReservationPage = () => {
                       d="M15 19l-7-7 7-7"
                     />
                   </svg>
-                  Select Another Team Member
+                  {translate('selectAnotherTeamMember')}
                 </button>
               </motion.div>
             )}

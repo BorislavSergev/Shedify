@@ -16,10 +16,6 @@ const BusinessPage = () => {
   useEffect(() => {
     const fetchBusinessData = async () => {
       // Check if the id corresponds to a non-business route
-      if (id === "dashboard") { // Exclude the dashboard or any other non-business routes
-        navigate('/dashboard'); // Redirect to the dashboard
-        return;
-      }
 
       try {
         const { data, error } = await supabase
@@ -29,8 +25,7 @@ const BusinessPage = () => {
             themeData, 
             visibility,
             name,
-            description,
-            logo_url
+            description
           `) 
           .eq("id", id)
           .single();
@@ -45,7 +40,7 @@ const BusinessPage = () => {
         }
 
         if (data.visibility === false) {
-          navigate(id + "/404");
+          navigate("/business/" + id + "/404");
           return;
         }
 
@@ -66,7 +61,7 @@ const BusinessPage = () => {
         setLoading(false);
       } catch (err) {
         console.error(err);
-        navigate(id + '/404');
+        navigate("/business/" + id + "/404");
       }
     };
 

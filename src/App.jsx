@@ -204,8 +204,8 @@ const App = () => {
               <Route path="/register" element={<PublicRoute element={<Register />} />} />
               
               {/* Business and reservation routes */}
-              <Route path="/:id" element={<BusinessPage />} />
-              <Route path="/:businessId/reservation" element={<ReservationPage />} />
+              <Route path="/business/:id" element={<BusinessPage />} />
+              <Route path="/business/:businessId/reservation" element={<ReservationPage />} />
               <Route path="/manage/reservation/:id" element={<ManageReservation />} />
 
               {/* Protected routes that require authentication */}

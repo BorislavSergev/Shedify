@@ -28,7 +28,9 @@ export const translations = {
     firstName: "Име",
     lastName: "Фамилия",
     phoneNumber: "Телефон",
-
+    noServicesAvailableMessage: "В момента няма налични услуги за избрания член на екипа.",
+    reservationCancelledMessage: "Тази резервация е отменена",
+    invalidEmail: "Невалиден имейл",
     // Common
     save: "Запази",
     cancel: "Отказ",
@@ -143,7 +145,7 @@ export const translations = {
     accept: "Приеми",
     decline: "Откажи",
     approved: "Одобрена",
-    cancelled: "Отказана",
+    cancelled: "Отменена",
     todayEarnings: "Печалба за деня",
     reservationTrend: "Тренд на резервациите",
     last15DaysVsPrevious: "Спрямо предишните 15 дни",
@@ -234,7 +236,7 @@ export const translations = {
     revenue: "Печалба",
     accepted: "Приета",
     rejected: "Отхвърлена",
-    cancelled: "Отказана",
+    cancelled: "Отменена",
     todayRevenue: "Печалба за деня",
     viewDetails: "Виж детайли",
     filterByDate: "Филтрирай по дата",
@@ -489,6 +491,7 @@ export const translations = {
     manage_themes: "Manage Themes",
     owner: "Owner",
 
+    invalidEmail: "Invalid email",
     // Payment & Subscription
     processingPayment: "Processing Payment",
     pleaseWait: "Please wait...",
@@ -937,5 +940,7 @@ export const translations = {
     failedToSaveEditedOffer: "Failed to save edited offer",
     upgradePlanRequired: "You need to upgrade your plan to create more offers",
     noPlanSelected: "No subscription plan selected",
+    cancelled: "Cancelled",
+    reservationCancelledMessage: "This reservation has been cancelled",
   }
 }
