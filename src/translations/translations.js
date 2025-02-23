@@ -304,8 +304,11 @@ export const translations = {
     deleteAccountWarning: "След като изтриете акаунта си, няма връщане назад. Моля, бъдете сигурни.",
     deleteAccountConfirmation: "Това действие не може да бъде отменено. Това ще изтрие завинаги акаунта ви и ще премахне данните ви от нашите сървъри.",
     typeDeleteToConfirm: 'Моля, напишете "DELETE" за потвърждение.',
-    saving: "Запазване...",
-    saveChanges: "Запази промените",
+    sending: "Изпращане...",
+    verifying: "Проверка...",
+    resendCode: "Изпрати отново",
+    failedToSendCode: "Неуспешно изпращане на код за потвърждение. Моля, опитайте отново.",
+    invalidVerificationCode: "Невалиден код за потвърждение. Моля, опитайте отново.",
 
     // File upload
     chooseFile: "Избери снимка",
@@ -804,6 +807,11 @@ export const translations = {
     deleteAccountWarning: "Once you delete your account, there is no going back. Please be certain.",
     deleteAccountConfirmation: "This action cannot be undone. This will permanently delete your account and remove your data from our servers.",
     typeDeleteToConfirm: 'Please type "DELETE" to confirm.',
+    sending: "Sending...",
+    verifying: "Verifying...",
+    resendCode: "Resend Code",
+    failedToSendCode: "Failed to send verification code. Please try again.",
+    invalidVerificationCode: "Invalid verification code. Please try again.",
 
     // File upload
     chooseFile: "Choose File",

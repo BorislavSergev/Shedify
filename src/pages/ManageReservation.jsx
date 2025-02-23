@@ -43,6 +43,8 @@ const ManageReservation = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showCancelSuccess, setShowCancelSuccess] = useState(false);
+  const [isRequestingCode, setIsRequestingCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,21 +89,48 @@ const ManageReservation = () => {
 
   const requestEditCode = async () => {
     if (email === reservation.email) {
-      // In a real application, send verification code to email
-      setStep(2);
+      try {
+        setIsRequestingCode(true);
+        setError(null);
+        
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/send-confirmation-code`, {
+          reservationId,
+          email
+        });
+
+        if (response.status === 200) {
+          setStep(2);
+        }
+      } catch (err) {
+        setError(translate('failedToSendCode'));
+      } finally {
+        setIsRequestingCode(false);
+      }
     } else {
       setError(translate('invalidEmail'));
     }
   };
 
-  const verifyCode = () => {
-    // In production, verify against actual code sent to email
-    if (code === "123456") {
-      setVerified(true);
-      setStep(3);
+  const verifyCode = async () => {
+    try {
+      setIsVerifyingCode(true);
       setError(null);
-    } else {
+
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_EMAIL}/verify-confirmation-code`, {
+        reservationId,
+        email,
+        code
+      });
+
+      if (response.status === 200) {
+        setVerified(true);
+        setStep(3);
+        setError(null);
+      }
+    } catch (err) {
       setError(translate('invalidVerificationCode'));
+    } finally {
+      setIsVerifyingCode(false);
     }
   };
 
@@ -198,15 +227,24 @@ const ManageReservation = () => {
                       placeholder={translate('enterYourEmail')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      disabled={isRequestingCode}
                     />
                   </div>
 
                   <button
                     onClick={requestEditCode}
                     style={themeStyles.accent}
-                    className="w-full text-white py-3 rounded-lg hover:opacity-90 transform hover:scale-[1.02] transition-all duration-200"
+                    className="w-full text-white py-3 rounded-lg hover:opacity-90 transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center"
+                    disabled={isRequestingCode}
                   >
-                    {translate('continue')}
+                    {isRequestingCode ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                        {translate('sending')}
+                      </>
+                    ) : (
+                      translate('continue')
+                    )}
                   </button>
                 </div>
               </div>
@@ -234,18 +272,33 @@ const ManageReservation = () => {
                       placeholder="000000"
                       value={code}
                       onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                      disabled={isVerifyingCode}
                     />
                     <p className="mt-2 text-sm text-gray-500 text-center">
                       {translate('enterVerificationCodeSent')}
                     </p>
+                    <button
+                      onClick={requestEditCode}
+                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 block mx-auto"
+                    >
+                      {translate('resendCode')}
+                    </button>
                   </div>
 
                   <button
                     onClick={verifyCode}
                     style={themeStyles.accent}
-                    className="w-full text-white py-3 rounded-lg hover:opacity-90 transform hover:scale-[1.02] transition-all duration-200"
+                    className="w-full text-white py-3 rounded-lg hover:opacity-90 transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center"
+                    disabled={isVerifyingCode}
                   >
-                    {translate('verifyCode')}
+                    {isVerifyingCode ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                        {translate('verifying')}
+                      </>
+                    ) : (
+                      translate('verifyCode')
+                    )}
                   </button>
                 </div>
               </div>
