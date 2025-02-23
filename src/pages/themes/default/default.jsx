@@ -42,19 +42,33 @@ const Default = ({ previewData }) => {
     <HelmetProvider>
       <div className="font-sans">
         <Helmet>
+          {/* Basic Meta Tags */}
           <title>{previewData?.seo?.title || "Default Theme"}</title>
-          <meta name="description" content={previewData?.seo?.description || ""} />
-          <meta name="keywords" content={previewData?.seo?.keywords || ""} />
-          <meta property="og:title" content={previewData?.seo?.title || ""} />
-          <meta property="og:description" content={previewData?.seo?.description || ""} />
-          <meta property="description" content={previewData?.seo?.description || ""} />
-          <meta
-          name={previewData?.seo?.title}
-          content={previewData?.seo?.description}
-          data-rh="true"
-          />
+          <meta name="description" content={previewData?.seo?.description} />
+          <meta name="keywords" content={previewData?.seo?.keywords} />
+          <link rel="canonical" href={previewData?.seo?.url} />
 
-          <meta property="og:image" content={previewData?.seo?.ogImage || ""} />
+          {/* Open Graph / Facebook */}
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={previewData?.seo?.url} />
+          <meta property="og:title" content={previewData?.seo?.title} />
+          <meta property="og:description" content={previewData?.seo?.description} />
+          <meta property="og:image" content={previewData?.seo?.ogImage} />
+
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:url" content={previewData?.seo?.url} />
+          <meta name="twitter:title" content={previewData?.seo?.title} />
+          <meta name="twitter:description" content={previewData?.seo?.description} />
+          <meta name="twitter:image" content={previewData?.seo?.ogImage} />
+
+          {/* Additional SEO Meta Tags */}
+          <meta name="robots" content="index, follow" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
+          <meta name="language" content="English" />
+          <meta name="revisit-after" content="7 days" />
+          <meta name="author" content={previewData?.seo?.title} />
         </Helmet>
 
         {/* Header Section */}

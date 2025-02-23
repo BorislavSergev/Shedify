@@ -24,7 +24,14 @@ const BusinessPage = () => {
       try {
         const { data, error } = await supabase
           .from("Business")
-          .select("theme, themeData, visibility") 
+          .select(`
+            theme, 
+            themeData, 
+            visibility,
+            name,
+            description,
+            logo_url
+          `) 
           .eq("id", id)
           .single();
 
@@ -42,8 +49,20 @@ const BusinessPage = () => {
           return;
         }
 
+        // Prepare SEO data
+        const seoData = {
+          title: data.name || 'Business Page',
+          description: data.description || 'Welcome to our business page',
+          ogImage: data.logo_url || '',
+          keywords: `${data.name}, business, services`,
+          url: window.location.href,
+        };
+
         setTheme(data.theme || "default");
-        setThemeData(data.themeData || {});
+        setThemeData({
+          ...data.themeData,
+          seo: seoData
+        });
         setLoading(false);
       } catch (err) {
         console.error(err);

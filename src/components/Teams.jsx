@@ -584,7 +584,6 @@ const Teams = () => {
 
   // Add this function to handle ownership transfer
   const handleTransferOwnership = async () => {
-    console.log("Transferring ownership to:", transferToMember);
     try {
       if (!transferToMember) return;
 
@@ -623,7 +622,6 @@ const Teams = () => {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
         
-        console.log("Current User ID:", user.id);
         setCurrentUserId(user.id);
 
         // Fetch business to get owner_id
@@ -635,8 +633,6 @@ const Teams = () => {
         
         if (businessError) throw businessError;
         
-        console.log("Business Data:", businessData);
-        console.log("Business Owner ID:", businessData.owner_id);
         setBusinessOwnerId(businessData.owner_id);
 
         // Fetch the owner's email
@@ -648,7 +644,6 @@ const Teams = () => {
 
         if (ownerError) throw ownerError;
 
-        console.log("Business Owner Email:", ownerData.email); // Log the owner's email
         setBusinessOwnerEmail(ownerData.email); // Store the owner's email
 
         // Fetch team members with their user details
@@ -678,7 +673,6 @@ const Teams = () => {
 
         if (teamError) throw teamError;
         
-        console.log("Team Members:", teamData);
         setTeamMembers(teamData);
 
       } catch (error) {
@@ -823,12 +817,6 @@ const Teams = () => {
                     const userIsOwner = currentUserIsOwner();
                     const isCurrentUser = member.userId === currentUserId; // Check if the member is the current user
 
-                    console.log("Rendering member:", {
-                      name: member.Users.first_name,
-                      isOwner: memberIsOwner,
-                      currentUserIsOwner: userIsOwner,
-                      isCurrentUser: isCurrentUser
-                    });
 
                     return (
                       <tr key={member.id} className="border-t hover:bg-gray-50">

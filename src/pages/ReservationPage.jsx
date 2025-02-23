@@ -954,17 +954,21 @@ const ReservationPage = () => {
                       </button>
                     </div>
                   )}
-                  formatWeekDay={(nameOfDay) => (
-                    <div className="text-gray-500 font-medium text-center w-8 h-8 flex items-center justify-center">
-                      {nameOfDay.slice(0, 1)}
-                    </div>
-                  )}
+                  className="react-datepicker"
+                  popperClassName="react-datepicker-popper"
+                  popperModifiers={{
+                    preventOverflow: {
+                      enabled: true,
+                      boundariesElement: 'viewport',
+                    },
+                  }}
                 />
                 <style>
                   {`
                     .react-datepicker {
                       border: none !important;
                       font-family: inherit !important;
+                      width: 100% !important;
                     }
                     .react-datepicker__header {
                       background: white !important;

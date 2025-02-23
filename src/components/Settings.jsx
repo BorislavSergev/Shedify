@@ -535,7 +535,7 @@ const Settings = () => {
         <div className="text-center">{translate('loading')}</div>
       ) : (
         <>
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {hasPermission('settings_general') && (
               <button
                 onClick={() => setActiveTab("general")}

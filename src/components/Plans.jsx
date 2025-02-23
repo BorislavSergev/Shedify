@@ -81,8 +81,6 @@ const Plans = () => {
       }
     } catch (error) {
       console.error('Error redirecting to Customer Portal:', error);
-    } finally {
-      setIsManageLoading(false); // Reset loading state
     }
   };
 
@@ -106,8 +104,6 @@ const Plans = () => {
       }
     } catch (error) {
       console.error('Error selecting plan:', error);
-    } finally {
-      setIsLoadingButton(false); // Reset loading state
     }
   };
 
