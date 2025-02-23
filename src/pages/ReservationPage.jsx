@@ -220,17 +220,22 @@ const ReservationPage = () => {
     }
   }, [searchParams]);
 
-  // Add this function with your other functions
+  // Update the fetchOriginalReservation function
   const fetchOriginalReservation = async (rescheduleId) => {
     try {
       const { data, error } = await supabase
         .from("Reservations")
         .select(`
           *,
-          BusinessTeam (
+          BusinessTeam!reservations_employeeid_fkey (
+            id,
+            worktime,
+            bufferTime,
             Users (
+              id,
               first_name,
-              last_name
+              last_name,
+              avatar
             )
           )
         `)
@@ -239,48 +244,78 @@ const ReservationPage = () => {
 
       if (error) throw error;
 
-      setOriginalReservation(data);
-      // Pre-fill the form with existing data
-      setSelectedTeamMember(data.businessTeamId);
-      setSelectedServices(data.services);
+      // Set the selected team member
+      setSelectedTeamMember(data.BusinessTeam);
+      
+      // Parse services from JSON
+      const parsedServices = typeof data.services === 'string' ? 
+        JSON.parse(data.services) : data.services;
+      
+      // Set selected services
+      setSelectedServices(parsedServices.map(serviceName => ({
+        name: serviceName,
+        timetomake: data.timeToMake / parsedServices.length // Distribute time equally
+      })));
+
+      // Pre-fill customer information
       setFirstName(data.firstName);
       setLastName(data.lastName);
       setEmail(data.email);
       setPhoneNumber(data.phoneNumber);
-      // Start at date/time selection step for rescheduling
+
+      // Set original reservation data
+      setOriginalReservation(data);
+
+      // Start at date/time selection step
       setStep(3);
+
     } catch (err) {
       console.error("Error fetching reservation:", err);
     }
   };
 
-  // Replace the existing confirmAppointment function with this updated version
+  // Update the confirmAppointment function's rescheduling part
   const confirmAppointment = async () => {
     try {
       setShowConfirmationModal(true);
       setConfirmationStatus('processing');
 
       if (isRescheduling) {
+        // Format the new reservation datetime
+        const [hours, minutes] = selectedSlot.split(":").map(Number);
+        const newReservationDate = new Date(selectedDate);
+        newReservationDate.setHours(hours, minutes, 0, 0);
+
         // Update existing reservation
         const { error: updateError } = await supabase
           .from("Reservations")
           .update({
-            reservationAt: selectedDate.toISOString().split('T')[0] + ' ' + selectedSlot,
+            reservationAt: newReservationDate.toISOString(),
             updatedAt: new Date().toISOString()
           })
           .eq('id', originalReservation.id);
 
         if (updateError) throw updateError;
 
+        // Send email notification about rescheduling
+        try {
+          await axios.post(`${BACKEND_EMAIL_URL}/reschedule-notification`, {
+            name: `${firstName} ${lastName}`,
+            business: BusinessName,
+            newDateTime: newReservationDate.toISOString(),
+            email
+          });
+        } catch (error) {
+          console.error("Email notification error:", error);
+        }
+
         setConfirmationStatus('success');
         
-        // Reset form after 2 seconds
+        // Reset form after success
         setTimeout(() => {
           setShowConfirmationModal(false);
-          // Redirect back to manage reservation page
-          navigate(`/manage-reservation/${businessId}?id=${originalReservation.id}`);
+          window.location.href = `/business/${businessId}/reservation`;
         }, 2000);
-        
       } else {
         // Regular booking flow
         const totalServiceTime = selectedServices.reduce(
@@ -377,7 +412,7 @@ const ReservationPage = () => {
         }, 1500);
       }
     } catch (error) {
-      console.error("Error creating/updating reservation:", error);
+      console.error("Error updating reservation:", error);
       setConfirmationStatus('error');
     }
   };
@@ -1344,10 +1379,14 @@ const ReservationPage = () => {
                     </svg>
                   </div>
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    {translate('reservationSubmitted')}
+                    {isRescheduling ? 
+                      translate('reservationRescheduled') : 
+                      translate('reservationSubmitted')}
                   </h3>
                   <p className="text-gray-600 mb-4">
-                    {translate('appointmentRequestSent')}
+                    {isRescheduling ? 
+                      translate('appointmentRescheduled') : 
+                      translate('appointmentRequestSent')}
                   </p>
                   <div className="text-sm text-gray-500">
                     {translate('confirmationEmailSent')} {email}
