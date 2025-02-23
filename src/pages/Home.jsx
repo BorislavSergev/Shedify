@@ -80,7 +80,7 @@ const Home = () => {
 
         {/* Additional Info */}
         <motion.p variants={itemVariants} className="mt-12 text-gray-400">
-          © 2024 Shedify. Всички права запазени.
+          © 2025 Shedify. Всички права запазени.
         </motion.p>
       </motion.div>
 
