@@ -24,6 +24,7 @@ import PageCustomizer from "./components/PageCustomizer";
 import Default from "./pages/themes/default/default";
 import ManageReservation from "./pages/ManageReservation";
 import { LanguageProvider } from './contexts/LanguageContext';
+import ResetPassword from "./pages/ResetPassword";
 import { ToastProvider } from './contexts/ToastContext';
 
 const App = () => {
@@ -202,6 +203,7 @@ const App = () => {
               {/* Public routes with potential redirects */}
               <Route path="/login" element={<PublicRoute element={<Login />} />} />
               <Route path="/register" element={<PublicRoute element={<Register />} />} />
+              <Route path="/reset-password" element={<PublicRoute element={<ResetPassword />} />} />
               
               {/* Business and reservation routes */}
               <Route path="/business/:id" element={<BusinessPage />} />
@@ -211,7 +213,6 @@ const App = () => {
               {/* Protected routes that require authentication */}
               <Route path="/create-business" element={<ProtectedRoute element={<CreateBusiness />} />} />
               <Route path="/success" element={<ProtectedRoute element={<Success />} />} />
-
               {/* Verify email route - only accessible when user exists but email isn't verified */}
               <Route
                 path="/verify-email"

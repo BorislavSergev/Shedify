@@ -22,8 +22,15 @@ const Login = () => {
     e.preventDefault();
     setErrorMessages([]);
 
+    // New validation for invalid email format
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex
+    if (!emailPattern.test(formData.email)) {
+      setErrorMessages([translate("invalidEmail")]);
+      return;
+    }
+
     if (!formData.email || !formData.password) {
-      setErrorMessages([translate("EMAIL_PASSWORD_REQUIRED")]);
+      setErrorMessages([translate("email_password_required")]);
       return;
     }
 
@@ -35,8 +42,16 @@ const Login = () => {
         email: formData.email,
         password: formData.password,
       });
-
-      if (authError) throw authError;
+      console.log(authError.message == "Invalid login credentials");
+      if (authError) {
+        // Check for specific error message and translate accordingly
+        if (authError.message === "Invalid login credentials") {
+          setErrorMessages(translate("invalid_login_credentials"));
+        } else {
+          setErrorMessages([translate("login_failed")]);
+        }
+        throw authError;
+      }
 
       // Check if email is confirmed
       if (!authData.user.email_confirmed_at) {
@@ -53,7 +68,7 @@ const Login = () => {
       // Verify session is set
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session) {
-        throw new Error("Session not established");
+        throw new Error(translate("login_failed"));
       }
 
       // Fetch business teams with business details
@@ -79,7 +94,7 @@ const Login = () => {
       }
 
       // Update loading message
-      setErrorMessages([translate("PREPARING_DASHBOARD")]);
+      setErrorMessages([translate("preparing_dashboard")]);
 
       // Select the first business and store it
       const firstBusiness = {
@@ -92,7 +107,7 @@ const Login = () => {
       localStorage.setItem("selectedBusiness", JSON.stringify(firstBusiness));
 
       // Update loading message
-      setErrorMessages([translate("LOADING_PLAN")]);
+      setErrorMessages([translate("loading_plan")]);
 
       // Fetch the plan details
       const { data: planData, error: planError } = await supabase
@@ -106,7 +121,7 @@ const Login = () => {
       }
 
       // Final loading message
-      setErrorMessages([translate("REDIRECTING_TO_DASHBOARD")]);
+      setErrorMessages([translate("redirecting_to_dashboard")]);
 
       // Navigate to dashboard
       navigate("/dashboard", { 
@@ -125,7 +140,7 @@ const Login = () => {
 
     } catch (error) {
       console.error('Login error:', error);
-      setErrorMessages([error.message || translate("LOGIN_FAILED")]);
+      setErrorMessages([error.message || translate("login_failed")]);
     } finally {
       setLoading(false);
     }
@@ -134,9 +149,11 @@ const Login = () => {
   return (
     <div className="flex h-screen justify-center items-center bg-primary">
       <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">{translate("LOGIN")}</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">{translate("login")}</h2>
         {errorMessages.length > 0 && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+          <div className={`p-3 rounded mb-4 ${
+            loading ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"
+          }`}>
             {errorMessages.map((msg, idx) => (
               <p key={idx}>{msg}</p>
             ))}
@@ -145,7 +162,7 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="email">
-              {translate("EMAIL")}
+              {translate("email")}
             </label>
             <input
               id="email"
@@ -153,14 +170,14 @@ const Login = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder={translate("ENTER_EMAIL")}
+              placeholder={translate("enter_email")}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2" htmlFor="password">
-              {translate("PASSWORD")}
+              {translate("password")}
             </label>
             <input
               id="password"
@@ -168,7 +185,7 @@ const Login = () => {
               type="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder={translate("ENTER_PASSWORD")}
+              placeholder={translate("enter_password")}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -180,15 +197,15 @@ const Login = () => {
             }`}
             disabled={loading}
           >
-            {loading ? translate("LOGGING_IN") : translate("LOGIN_BUTTON")}
+            {loading ? translate("logging_in") : translate("login")}
           </button>
         </form>
         
         <div className="mt-4 text-center">
           <p className="text-gray-600">
-            {translate("NO_ACCOUNT")}{" "}
+            {translate("no_account")}{" "}
             <Link to="/register" className="text-accent hover:underline">
-              {translate("REGISTER")}
+              {translate("register")}
             </Link>
           </p>
         </div>

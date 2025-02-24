@@ -12,6 +12,28 @@ const ResetPassword = () => {
   const { translate } = useLanguage(); // Add language context
 
   useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        const newPassword = prompt("What would you like your new password to be?");
+        const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+
+        if (data) {
+          alert("Password updated successfully!");
+          navigate("/login"); // Redirect to login after successful password update
+        }
+        if (error) {
+          alert("There was an error updating your password.");
+        }
+      }
+    });
+
+    // Cleanup subscription
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [navigate]);
+
+  useEffect(() => {
     // Cleanup function to reset messages on component unmount
     return () => {
       setErrorMessages([]);
@@ -35,14 +57,20 @@ const ResetPassword = () => {
 
     try {
       setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-
-      if (error) throw error;
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password'  // Use dynamic origin
+      });
+      
+      if (error) {
+        console.error('Error sending recovery email:', error.message);
+        throw error;
+      }
 
       setSuccessMessage(translate("RESET_LINK_SENT"));
+      setErrorMessages([translate("IF_NO_EMAIL_RECEIVED_ACCOUNT_MAY_NOT_EXIST")]);
     } catch (error) {
       console.error('Reset password error:', error);
-      setErrorMessages([error.message || translate("RESET_FAILED")]);
+      setErrorMessages([error.message]);
     } finally {
       setLoading(false);
     }
