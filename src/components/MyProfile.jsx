@@ -18,12 +18,6 @@ const MyProfile = () => {
   const [message, setMessage] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
 
   // Fetch user profile details from Users table on mount
   useEffect(() => {
@@ -133,58 +127,6 @@ const MyProfile = () => {
     }
   };
 
-  const handleEmailUpdate = async (newEmail) => {
-    try {
-      setLoading(true);
-      setError('');
-      setMessage('');
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase.auth.updateUser({
-        email: newEmail
-      });
-
-      if (error) throw error;
-
-      setMessage('Email update verification has been sent to your new email address. Please check your inbox.');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      if (passwordData.newPassword !== passwordData.confirmPassword) {
-        throw new Error('New passwords do not match');
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: passwordData.newPassword
-      });
-
-      if (error) throw error;
-
-      setMessage('Password updated successfully');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setIsChangingPassword(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== 'DELETE') {
@@ -290,67 +232,7 @@ const MyProfile = () => {
             </div>
           </div>
 
-          {/* Password Change Section */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">{translate('security')}</h2>
-            {!isChangingPassword ? (
-              <button
-                onClick={() => setIsChangingPassword(true)}
-                className="px-4 py-2 text-sm font-medium text-accent bg-primary rounded-md hover:bg-accentHover hover:text-white"
-              >
-                {translate('changePassword')}
-              </button>
-            ) : (
-              <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{translate('currentPassword')}</label>
-                  <input
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{translate('newPassword')}</label>
-                  <input
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{translate('confirmPassword')}</label>
-                  <input
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div className="flex space-x-4">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-md hover:bg-accentHover focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  >
-                    {loading ? translate('updating') : translate('updatePassword')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsChangingPassword(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                  >
-                    {translate('cancel')}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+
 
           {/* Danger Zone */}
           <div className="mt-10 border-t border-red-200 pt-8">

@@ -85,16 +85,8 @@ const Success = () => {
       setError(null);
 
       // Add detailed debugging logs
-      console.log('Debug information:');
-      console.log('1. Subscription data:', {
-        raw: localStorage.getItem('subscription'),
-        parsed: JSON.parse(localStorage.getItem('subscription') || 'null')
-      });
-      console.log('2. Selected business:', {
-        raw: localStorage.getItem('selectedBusiness'),
-        parsed: JSON.parse(localStorage.getItem('selectedBusiness') || 'null'),
-        memo: selectedBusiness
-      });
+
+
 
       // Add validation for required data before making the API call
       const subscription = localStorage.getItem('subscription');
@@ -111,10 +103,6 @@ const Success = () => {
       }
 
       if (!selectedBusiness?.id) {
-        console.error('Missing business data:', {
-          selectedBusiness,
-          localStorage: localStorage.getItem('selectedBusiness')
-        });
         // Redirect to business selection if no business is selected
         navigate('/businesses');
         return;
@@ -269,12 +257,6 @@ const Success = () => {
                   <span className="text-gray-600">{t('email')}</span>
                   <span className="font-medium text-gray-900 break-all">
                     {subscriptionInfo.customer_details?.email}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">{t('customerAddress')}</span>
-                  <span className="font-medium text-gray-900 text-right break-all">
-                    {subscriptionInfo.customer_details?.address?.line1}, {subscriptionInfo.customer_details?.address?.city}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">

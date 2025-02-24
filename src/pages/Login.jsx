@@ -23,7 +23,7 @@ const Login = () => {
     setErrorMessages([]);
 
     if (!formData.email || !formData.password) {
-      setErrorMessages(["Имейл и парола са задължителни"]);
+      setErrorMessages([translate("EMAIL_PASSWORD_REQUIRED")]);
       return;
     }
 
@@ -45,7 +45,7 @@ const Login = () => {
       }
 
       // Show loading message
-      setErrorMessages(["Зареждане на данните..."]);
+      setErrorMessages([translate("LOADING_DATA")]);
 
       // Critical: Wait for auth session to be fully established
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -79,7 +79,7 @@ const Login = () => {
       }
 
       // Update loading message
-      setErrorMessages(["Подготовка на таблото..."]);
+      setErrorMessages([translate("PREPARING_DASHBOARD")]);
 
       // Select the first business and store it
       const firstBusiness = {
@@ -92,7 +92,7 @@ const Login = () => {
       localStorage.setItem("selectedBusiness", JSON.stringify(firstBusiness));
 
       // Update loading message
-      setErrorMessages(["Зареждане на плана..."]);
+      setErrorMessages([translate("LOADING_PLAN")]);
 
       // Fetch the plan details
       const { data: planData, error: planError } = await supabase
@@ -106,7 +106,7 @@ const Login = () => {
       }
 
       // Final loading message
-      setErrorMessages(["Пренасочване към таблото..."]);
+      setErrorMessages([translate("REDIRECTING_TO_DASHBOARD")]);
 
       // Navigate to dashboard
       navigate("/dashboard", { 
@@ -125,7 +125,7 @@ const Login = () => {
 
     } catch (error) {
       console.error('Login error:', error);
-      setErrorMessages([error.message || "Неуспешно влизане. Моля, опитайте отново."]);
+      setErrorMessages([error.message || translate("LOGIN_FAILED")]);
     } finally {
       setLoading(false);
     }
@@ -134,7 +134,7 @@ const Login = () => {
   return (
     <div className="flex h-screen justify-center items-center bg-primary">
       <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Вход</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">{translate("LOGIN")}</h2>
         {errorMessages.length > 0 && (
           <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
             {errorMessages.map((msg, idx) => (
@@ -145,7 +145,7 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="email">
-              Имейл
+              {translate("EMAIL")}
             </label>
             <input
               id="email"
@@ -153,14 +153,14 @@ const Login = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Въведете вашия имейл"
+              placeholder={translate("ENTER_EMAIL")}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2" htmlFor="password">
-              Парола
+              {translate("PASSWORD")}
             </label>
             <input
               id="password"
@@ -168,7 +168,7 @@ const Login = () => {
               type="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Въведете вашата парола"
+              placeholder={translate("ENTER_PASSWORD")}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -180,16 +180,15 @@ const Login = () => {
             }`}
             disabled={loading}
           >
-            {loading ? "Влизане..." : "Влез"}
+            {loading ? translate("LOGGING_IN") : translate("LOGIN_BUTTON")}
           </button>
         </form>
         
-        {/* Add registration link */}
         <div className="mt-4 text-center">
           <p className="text-gray-600">
-            Нямате акаунт?{" "}
+            {translate("NO_ACCOUNT")}{" "}
             <Link to="/register" className="text-accent hover:underline">
-              Регистрирайте се
+              {translate("REGISTER")}
             </Link>
           </p>
         </div>

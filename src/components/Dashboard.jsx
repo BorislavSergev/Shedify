@@ -467,15 +467,25 @@ const Dashboard = () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      // Add user to BusinessTeam
-      const { error: teamError } = await supabase
+      // Check if user is already in BusinessTeam
+      const { data: existingTeamMember } = await supabase
         .from('BusinessTeam')
-        .insert([{
-          userId: user.id,
-          businessId: inviteData.businessid,
-        }]);
+        .select('id')
+        .eq('userId', user.id)
+        .eq('businessId', inviteData.businessid)
+        .single();
 
-      if (teamError) throw teamError;
+      if (!existingTeamMember) {
+        // Add user to BusinessTeam only if not already a member
+        const { error: teamError } = await supabase
+          .from('BusinessTeam')
+          .insert([{
+            userId: user.id,
+            businessId: inviteData.businessid,
+          }]);
+
+        if (teamError) throw teamError;
+      }
 
       // Add permissions
       if (inviteData.permissions && inviteData.permissions.length > 0) {

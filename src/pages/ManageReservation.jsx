@@ -152,7 +152,8 @@ const ManageReservation = () => {
       });
 
       setShowCancelSuccess(true);
-      fetchReservation();
+      // Reload the page after cancellation
+      window.location.reload();
     } catch (err) {
       setError(translate('failedToCancelReservation'));
     }
