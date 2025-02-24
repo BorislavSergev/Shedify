@@ -191,7 +191,7 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
           </motion.div>
         </motion.div>
       )}
-      <header className={`fixed top-0 left-0 w-full bg-white z-50 shadow-md ${loading ? 'hidden' : ''}`}>
+      <header className={`bg-white sticky top-0 z-20 shadow-md w-full ${loading ? 'hidden' : ''}`}>
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
           <button
             className="md:hidden p-2 text-gray-600 hover:text-gray-800"
