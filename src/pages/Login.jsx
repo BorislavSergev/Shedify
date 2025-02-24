@@ -42,15 +42,11 @@ const Login = () => {
         email: formData.email,
         password: formData.password,
       });
-      console.log(authError.message == "Invalid login credentials");
-      if (authError) {
-        // Check for specific error message and translate accordingly
-        if (authError.message === "Invalid login credentials") {
-          setErrorMessages(translate("invalid_login_credentials"));
-        } else {
-          setErrorMessages([translate("login_failed")]);
-        }
-        throw authError;
+      if (authError.message == "Invalid login credentials") {
+        setErrorMessages([translate("invalid_login_credentials")]);
+        return; // Exit early if there's an error
+      }else{
+        setErrorMessages([translate("login_failed")]);
       }
 
       // Check if email is confirmed

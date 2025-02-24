@@ -211,6 +211,10 @@ const ReservationPage = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [originalReservation, setOriginalReservation] = useState(null);
 
+  // Add this state variable near other state declarations
+  const [availableOffers, setAvailableOffers] = useState([]);
+  const [selectedOffer, setSelectedOffer] = useState(null);
+
   // Add this useEffect after your other useEffects
   useEffect(() => {
     const rescheduleId = searchParams.get('reschedule');
@@ -274,7 +278,13 @@ const ReservationPage = () => {
     }
   };
 
-  // Update the confirmAppointment function's rescheduling part
+  // Add this new handler for making a new reservation
+  const handleMakeNewReservation = () => {
+    setShowConfirmationModal(false);
+    resetForm();
+  };
+
+  // Update the confirmAppointment function
   const confirmAppointment = async () => {
     try {
       setShowConfirmationModal(true);
@@ -310,12 +320,6 @@ const ReservationPage = () => {
         }
 
         setConfirmationStatus('success');
-        
-        // Reset form after success
-        setTimeout(() => {
-          setShowConfirmationModal(false);
-          window.location.href = `/business/${businessId}/reservation`;
-        }, 2000);
       } else {
         // Regular booking flow
         const totalServiceTime = selectedServices.reduce(
@@ -374,42 +378,30 @@ const ReservationPage = () => {
           console.error("Email notification error:", error);
         }
 
-        // Set success status first
         setConfirmationStatus('success');
 
         // After 1.5 seconds, check for offers ONLY if not booking through an offer
-        setTimeout(async () => {
-          // Close confirmation modal
-          setShowConfirmationModal(false);
+        if (!isOfferBooking) {
+          // Check for offers only if this is not an offer booking
+          const offer = await checkForOffers(selectedTeamMember.id, selectedServices);
 
-          if (!isOfferBooking) {
-            // Check for offers only if this is not an offer booking
-            const offer = await checkForOffers(selectedTeamMember.id, selectedServices);
-
-            if (offer) {
-              // Save reservation details
-              setLastReservationDetails({
-                firstName,
-                lastName,
-                email,
-                phoneNumber,
-                teamMember: selectedTeamMember,
-                services: selectedServices,
-                reservationDate: reservationDate
-              });
-              
-              // Set current offer and show offer modal
-              setCurrentOffer(offer);
-              setShowOfferModal(true);
-            } else {
-              // If no offer, reset the form
-              resetForm();
-            }
-          } else {
-            // If this is an offer booking, just reset the form
-            resetForm();
+          if (offer) {
+            // Save reservation details
+            setLastReservationDetails({
+              firstName,
+              lastName,
+              email,
+              phoneNumber,
+              teamMember: selectedTeamMember,
+              services: selectedServices,
+              reservationDate: reservationDate
+            });
+            
+            // Set current offer and show offer modal
+            setCurrentOffer(offer);
+            setShowOfferModal(true);
           }
-        }, 1500);
+        }
       }
     } catch (error) {
       console.error("Error updating reservation:", error);
@@ -608,67 +600,64 @@ const ReservationPage = () => {
     return translations[lang][key] || key;
   };
 
-  // Add this function to check for available offers
+  // Update the checkForOffers function
   const checkForOffers = async (teamMemberId, services) => {
+    try {
+      // Get all offers for this team member
+      const { data: offers, error } = await supabase
+        .from("Offers")
+        .select(`
+          *,
+          Services!offers_service_fkey (
+            id,
+            name,
+            price,
+            timetomake
+          )
+        `)
+        .eq("team_member_id", teamMemberId);
 
+      if (error) {
+        console.error("Error fetching offers:", error);
+        return null;
+      }
 
-    // First, get all offers for this team member without date filtering
-    const { data: offers, error } = await supabase
-      .from("Offers")
-      .select(`
-        *,
-        Services!offers_service_fkey (
-          id,
-          name,
-          price,
-          timetomake
-        )
-      `)
-      .eq("team_member_id", teamMemberId);
+      if (offers && offers.length > 0) {
+        // Filter valid offers that are not for the currently selected services
+        const now = new Date();
+        const validOffers = offers.filter(offer => {
+          const startTime = new Date(offer.start_time);
+          const endTime = new Date(offer.end_time);
+          const isTimeValid = startTime <= now && now <= endTime;
+          const isDifferentService = !services.some(service => service.id === offer.service_id);
+          
+          return isTimeValid && isDifferentService;
+        });
 
-    if (error) {
-      console.error("Error fetching offers:", error);
+        if (validOffers.length > 0) {
+          setAvailableOffers(validOffers);
+          return validOffers[0]; // Return first offer to maintain compatibility
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error in checkForOffers:", error);
       return null;
     }
-
-
-    if (offers && offers.length > 0) {
-      // Check each offer's validity
-
-      // Find valid offers
-      const validOffers = offers.filter(offer => {
-        const now = new Date();
-        const startTime = new Date(offer.start_time);
-        const endTime = new Date(offer.end_time);
-        const isTimeValid = startTime <= now && now <= endTime;
-        const hasMatchingService = services.some(service => service.id === offer.service_id);
-        
-        return isTimeValid && hasMatchingService;
-      });
-
-
-      if (validOffers.length > 0) {
-        return validOffers[0]; // Return the first valid offer
-      }
-    }
-
-    return null;
   };
 
-  // Modify handleAcceptOffer function
+  // Update the handleAcceptOffer function
   const handleAcceptOffer = async () => {
+    if (!selectedOffer) return;
+    
     setShowOfferModal(false);
     setShowConfirmationModal(true);
     setConfirmationStatus('processing');
 
     try {
-      // Get the date from the first reservation
       const firstReservationDate = new Date(lastReservationDetails.reservationDate);
-      
-      // Set the start date for the offer booking
       setOfferStartDate(firstReservationDate);
-      
-      // Reset to date/time selection step
       setStep(3);
       setIsOfferBooking(true);
       
@@ -679,10 +668,9 @@ const ReservationPage = () => {
       setPhoneNumber(lastReservationDetails.phoneNumber);
       
       // Update selected services with the offered service
-      setSelectedServices([currentOffer.Services]);
-      
-      // Set the selected date to the same day as the first reservation
+      setSelectedServices([selectedOffer.Services]);
       setSelectedDate(firstReservationDate);
+      setCurrentOffer(selectedOffer);
       
       setShowConfirmationModal(false);
     } catch (error) {
@@ -1388,9 +1376,16 @@ const ReservationPage = () => {
                       translate('appointmentRescheduled') : 
                       translate('appointmentRequestSent')}
                   </p>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 mb-6">
                     {translate('confirmationEmailSent')} {email}
                   </div>
+                  <button
+                    onClick={handleMakeNewReservation}
+                    className="px-6 py-3 rounded-lg text-white font-medium shadow-md transition-transform hover:scale-105"
+                    style={themeStyles.accent}
+                  >
+                    {translate('makeNewReservation')}
+                  </button>
                 </div>
               )}
 
@@ -1443,7 +1438,7 @@ const ReservationPage = () => {
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-xl p-8 max-w-md w-full shadow-xl"
+            className="bg-white rounded-xl p-8 max-w-4xl w-full shadow-xl"
           >
             <div className="text-center">
               <div 
@@ -1466,45 +1461,94 @@ const ReservationPage = () => {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                {translate('specialOffer')}
+                {translate('specialOffers')} 
               </h3>
-              <p className="text-gray-600 mb-4">
-                {translate('specialOfferDescription')}
+              <p className="text-gray-600 mb-6">
+                {translate('selectOneOfferBelow')}
               </p>
               
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                <p className="text-gray-700 font-medium mb-2">
-                  {translate('offerDetails')}:
-                </p>
-                <div className="space-y-2">
-                  <p className="text-gray-600">
-                    <span className="font-medium">{translate('service')}:</span>{' '}
-                    {currentOffer?.Services?.name}
-                  </p>
-                  {currentOffer?.discount_percentage ? (
-                    <p className="text-gray-600">
-                      <span className="font-medium">{translate('discount')}:</span>{' '}
-                      {currentOffer.discount_percentage}%
-                    </p>
-                  ) : (
-                    <p className="text-gray-600">
-                      <span className="font-medium">{translate('specialPrice')}:</span>{' '}
-                      {currentOffer?.fixed_price} лв.
-                    </p>
-                  )}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {availableOffers.map((offer) => (
+                  <motion.div
+                    key={offer.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`p-6 rounded-xl shadow-md cursor-pointer transition-all duration-200 ${
+                      selectedOffer?.id === offer.id 
+                        ? 'ring-2 text-white'
+                        : 'bg-white hover:shadow-lg'
+                    }`}
+                    style={selectedOffer?.id === offer.id ? themeStyles.accent : {}}
+                    onClick={() => setSelectedOffer(offer)}
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex-grow">
+                        <h4 className={`text-lg font-semibold mb-2 ${
+                          selectedOffer?.id === offer.id ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          {offer.Services.name}
+                        </h4>
+                        <div className={`space-y-2 ${
+                          selectedOffer?.id === offer.id ? 'text-white' : 'text-gray-600'
+                        }`}>
+                          <p>
+                            <span className="font-medium">{translate('duration')}:</span>{' '}
+                            {offer.Services.timetomake} {translate('minutes')}
+                          </p>
+                          {offer.discount_percentage ? (
+                            <>
+                              <p>
+                                <span className="font-medium">{translate('regularPrice')}:</span>{' '}
+                                <span className="line-through">{offer.Services.price} лв.</span>
+                              </p>
+                              <p className="text-lg font-semibold">
+                                <span className="font-medium">{translate('discountedPrice')}:</span>{' '}
+                                {(offer.Services.price * (1 - offer.discount_percentage / 100)).toFixed(2)} лв.
+                              </p>
+                              <p className="inline-block px-3 py-1 rounded-full text-sm font-medium mt-2"
+                                style={{
+                                  backgroundColor: selectedOffer?.id === offer.id 
+                                    ? 'rgba(255, 255, 255, 0.2)' 
+                                    : getLighterShade(themeData?.general?.color, 0.1),
+                                  color: selectedOffer?.id === offer.id 
+                                    ? 'white' 
+                                    : themeData?.general?.color
+                                }}>
+                                {offer.discount_percentage}% {translate('off')}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p>
+                                <span className="font-medium">{translate('regularPrice')}:</span>{' '}
+                                <span className="line-through">{offer.Services.price} лв.</span>
+                              </p>
+                              <p className="text-lg font-semibold">
+                                <span className="font-medium">{translate('specialPrice')}:</span>{' '}
+                                {offer.fixed_price} лв.
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-4 justify-center">
                 <button
                   onClick={handleDeclineOffer}
-                  className="flex-1 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                 >
                   {translate('decline')}
                 </button>
                 <button
                   onClick={handleAcceptOffer}
-                  className="flex-1 px-6 py-3 rounded-lg text-white font-medium shadow-md transition-transform hover:scale-105"
+                  disabled={!selectedOffer}
+                  className={`px-6 py-3 rounded-lg text-white font-medium shadow-md transition-transform ${
+                    selectedOffer ? 'hover:scale-105' : 'opacity-50 cursor-not-allowed'
+                  }`}
                   style={themeStyles.accent}
                 >
                   {translate('accept')}
