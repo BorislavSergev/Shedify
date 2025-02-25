@@ -27,6 +27,8 @@ const Offers = () => {
   const [userOffersCount, setUserOffersCount] = useState(0);
   const [isOfferLimitReached, setIsOfferLimitReached] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const offersPerPage = 10;
 
   const selectedBusiness = useMemo(() => {
     try {
@@ -59,13 +61,17 @@ const Offers = () => {
   const fetchOffers = async () => {
     setLoading(true);
     try {
+      // Get the authenticated user
       const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get the selected business from localStorage
       const selectedBusiness = JSON.parse(localStorage.getItem('selectedBusiness'));
-
+      
       if (!user || !selectedBusiness) {
         throw new Error('User or business not found');
       }
 
+      // First, get the BusinessTeam ID for the current user and business
       const { data: businessTeam, error: businessTeamError } = await supabase
         .from('BusinessTeam')
         .select('id')
@@ -75,6 +81,8 @@ const Offers = () => {
 
       if (businessTeamError) throw businessTeamError;
 
+      // Then fetch offers for this team member
+      // Update the join relationship to use the correct foreign key
       const { data: offersData, error: offersError } = await supabase
         .from('Offers')
         .select(`
@@ -87,15 +95,13 @@ const Offers = () => {
 
       if (offersError) throw offersError;
 
+      // Map the data to include service names
       const offersWithServiceNames = offersData.map(offer => ({
         ...offer,
         service_name: offer.service?.name || 'Unknown Service'
       }));
 
-      // Select an offer based on user criteria (e.g., user ID or preferences)
-      const userSpecificOffer = offersWithServiceNames.find(offer => offer.user_id === user.id) || offersWithServiceNames[0];
-
-      setOffers([userSpecificOffer]); // Set the selected offer for the user
+      setOffers(offersWithServiceNames);
     } catch (err) {
       console.error('Error fetching offers:', err);
       setError('failedToLoadOffers');
@@ -196,6 +202,14 @@ const Offers = () => {
       setError('failedToFetchOfferLimitsAndCount');
     }
   };
+
+  // Calculate the current offers to display based on pagination
+  const indexOfLastOffer = currentPage * offersPerPage;
+  const indexOfFirstOffer = indexOfLastOffer - offersPerPage;
+  const currentOffers = offers.slice(indexOfFirstOffer, indexOfLastOffer);
+
+  // Function to handle page change
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   // Handle form field changes
   const handleInputChange = (e) => {
@@ -584,7 +598,7 @@ const Offers = () => {
           </div>
         )}
 
-        {/* Offers Display */}
+        {/* Offers Table */}
         <div className="bg-white rounded-lg shadow-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-2xl font-semibold text-gray-800">{translate('currentOffers')}</h3>
@@ -595,69 +609,7 @@ const Offers = () => {
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accent border-t-transparent"></div>
                 <p className="mt-2 text-gray-600">{translate('loading')}</p>
               </div>
-            ) : offers.length > 0 ? (
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-                {/* Header section */}
-                <div className="bg-gray-50 p-3 border-b border-gray-100">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium text-base text-gray-900 truncate pr-2">
-                      {offers[0].title}
-                    </h3>
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium
-                      ${offers[0].offer_type === 'discount' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {offers[0].offer_type === 'discount' 
-                        ? `${offers[0].discount_percentage}%` 
-                        : `${offers[0].fixed_price} лв.`
-                      }
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content section */}
-                <div className="p-3 space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-900">{offers[0].service_name}</span>
-                  </div>
-
-                  <div className="flex items-center text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-gray-900">
-                        {new Date(offers[0].start_time).toLocaleDateString()}
-                      </span>
-                      <span className="text-xs text-gray-500">{translate('to')}</span>
-                      <span className="text-gray-900">
-                        {new Date(offers[0].end_time).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions section */}
-                <div className="border-t border-gray-100 p-2 bg-gray-50 flex justify-end space-x-2">
-                  <button
-                    onClick={() => editExistingOffer(offers[0])}
-                    className="flex items-center px-3 py-1.5 rounded-md bg-accent text-white text-xs font-medium transition-colors duration-150 hover:bg-accent-dark"
-                  >
-                    <FaEdit className="mr-1 h-3 w-3" />
-                    {translate('edit')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setOfferToDelete(offers[0]);
-                      setShowDeleteConfirmDialog(true);
-                    }}
-                    className="flex items-center px-3 py-1.5 rounded-md bg-red-500 text-white text-xs font-medium transition-colors duration-150 hover:bg-red-600"
-                  >
-                    <FaTrashAlt className="mr-1 h-3 w-3" />
-                    {translate('delete')}
-                  </button>
-                </div>
-              </div>
-            ) : (
+            ) : currentOffers.length === 0 ? (
               <div className="text-center py-12">
                 <svg 
                   className="mx-auto h-16 w-16 text-gray-400"
@@ -684,6 +636,182 @@ const Offers = () => {
                 >
                   {translate('goToServices')}
                 </button>
+              </div>
+            ) : (
+              <div className="min-w-full">
+                {/* Mobile view - card layout */}
+                <div className="md:hidden space-y-3 px-2">
+                  {currentOffers.map((offer) => (
+                    <div key={offer.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                      {/* Header section */}
+                      <div className="bg-gray-50 p-3 border-b border-gray-100">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-medium text-base text-gray-900 truncate pr-2">
+                            {offer.title}
+                          </h3>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium
+                            ${offer.offer_type === 'discount' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {offer.offer_type === 'discount' 
+                              ? `${offer.discount_percentage}%` 
+                              : `${offer.fixed_price} лв.`
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content section */}
+                      <div className="p-3 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-900">{offer.service_name}</span>
+                        </div>
+
+                        <div className="flex items-center text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900">
+                              {new Date(offer.start_time).toLocaleDateString()}
+                            </span>
+                            <span className="text-xs text-gray-500">{translate('to')}</span>
+                            <span className="text-gray-900">
+                              {new Date(offer.end_time).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions section */}
+                      <div className="border-t border-gray-100 p-2 bg-gray-50 flex justify-end space-x-2">
+                        <button
+                          onClick={() => editExistingOffer(offer)}
+                          className="flex items-center px-3 py-1.5 rounded-md bg-accent text-white text-xs font-medium transition-colors duration-150 hover:bg-accent-dark"
+                        >
+                          <FaEdit className="mr-1 h-3 w-3" />
+                          {translate('edit')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOfferToDelete(offer);
+                            setShowDeleteConfirmDialog(true);
+                          }}
+                          className="flex items-center px-3 py-1.5 rounded-md bg-red-500 text-white text-xs font-medium transition-colors duration-150 hover:bg-red-600"
+                        >
+                          <FaTrashAlt className="mr-1 h-3 w-3" />
+                          {translate('delete')}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop view - table layout */}
+                <div className="hidden md:block">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                          {translate('title')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                          {translate('offerType')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                          {translate('service')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                          {translate('duration')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                          {translate('actions')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {currentOffers.map((offer) => (
+                        <tr key={offer.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                              {offer.title}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full
+                              ${offer.offer_type === 'discount' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {offer.offer_type === 'discount' 
+                                ? `${offer.discount_percentage}%` 
+                                : `${offer.fixed_price} лв.`
+                              }
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900 truncate max-w-xs">
+                              {offer.service_name}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">
+                              {new Date(offer.start_time).toLocaleDateString()}
+                              <span className="text-gray-400 mx-1">→</span>
+                              {new Date(offer.end_time).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => editExistingOffer(offer)}
+                                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                              >
+                                <FaEdit className="mr-1 h-3 w-3" />
+                                {translate('edit')}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setOfferToDelete(offer);
+                                  setShowDeleteConfirmDialog(true);
+                                }}
+                                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              >
+                                <FaTrashAlt className="mr-1 h-3 w-3" />
+                                {translate('delete')}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-center mt-4 px-4 pb-4">
+                  <div className="inline-flex rounded-md shadow-sm">
+                    {Array.from({ length: Math.ceil(offers.length / offersPerPage) }, (_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => paginate(index + 1)}
+                        className={`
+                          relative inline-flex items-center px-3 py-1.5
+                          ${index === 0 ? 'rounded-l-md' : ''}
+                          ${index === Math.ceil(offers.length / offersPerPage) - 1 ? 'rounded-r-md' : ''}
+                          ${currentPage === index + 1 
+                            ? 'z-10 bg-accent text-white' 
+                            : 'bg-white text-gray-500 hover:bg-gray-50'
+                          }
+                          text-xs font-medium border border-gray-300
+                          focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent
+                        `}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>

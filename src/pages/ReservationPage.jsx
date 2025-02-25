@@ -635,8 +635,10 @@ const ReservationPage = () => {
         });
 
         if (validOffers.length > 0) {
-          setAvailableOffers(validOffers);
-          return validOffers[0]; // Return first offer to maintain compatibility
+          const randomIndex = Math.floor(Math.random() * validOffers.length);
+          const selectedOffer = validOffers[randomIndex]; // Select a random offer
+          setAvailableOffers([selectedOffer]); // Set availableOffers with only the selected offer
+          return selectedOffer; // Return the selected offer
         }
       }
 
@@ -1087,7 +1089,7 @@ const ReservationPage = () => {
                               strokeLinecap="round" 
                               strokeLinejoin="round" 
                               strokeWidth={2} 
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
                           <span className="text-lg font-medium">{slot}</span>
@@ -1438,7 +1440,7 @@ const ReservationPage = () => {
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-xl p-8 max-w-4xl w-full shadow-xl"
+            className="bg-white rounded-xl p-8 max-w-4xl w-full shadow-xl flex flex-col items-center"
           >
             <div className="text-center">
               <div 
@@ -1467,7 +1469,7 @@ const ReservationPage = () => {
                 {translate('selectOneOfferBelow')}
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="gap-6 mb-8 items-center justify-center">
                 {availableOffers.map((offer) => (
                   <motion.div
                     key={offer.id}
@@ -1475,22 +1477,19 @@ const ReservationPage = () => {
                     whileTap={{ scale: 0.98 }}
                     className={`p-6 rounded-xl shadow-md cursor-pointer transition-all duration-200 ${
                       selectedOffer?.id === offer.id 
-                        ? 'ring-2 text-white'
-                        : 'bg-white hover:shadow-lg'
+                        ? 'ring-2 text-black'
+                        : 'bg-white text-gray-800 hover:shadow-lg'
                     }`}
-                    style={selectedOffer?.id === offer.id ? themeStyles.accent : {}}
-                    onClick={() => setSelectedOffer(offer)}
+                    style={selectedOffer?.id === offer.id ? {} : { border: '2px solid #E5E7EB' }}
                   >
                     <div className="flex flex-col h-full">
                       <div className="flex-grow">
                         <h4 className={`text-lg font-semibold mb-2 ${
                           selectedOffer?.id === offer.id ? 'text-white' : 'text-gray-800'
-                        }`}>
-                          {offer.Services.name}
-                        </h4>
+                        }`}>{offer.Services.name}</h4>
                         <div className={`space-y-2 ${
                           selectedOffer?.id === offer.id ? 'text-white' : 'text-gray-600'
-                        }`}>
+                        }`}> 
                           <p>
                             <span className="font-medium">{translate('duration')}:</span>{' '}
                             {offer.Services.timetomake} {translate('minutes')}

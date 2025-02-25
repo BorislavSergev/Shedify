@@ -6,7 +6,7 @@ import axios from 'axios';
 const stripePromise = loadStripe('pk_test_51OYOeyIg0JmvmaJzNlwRU48fe9U7rL5lXoa3QgTpLqffhxd9hvm71soV7hIwtGwQjftvRb6QehPiLjEIofAzs3cK008ncJkUXA');
 
 // Get the API URL from environment variable or use development URL
-const API_URL =  'https://stripe.swiftabook.com'; // Production server
+const API_URL =  'https://stripe.shedify.eu'; // Production server
 
 export const useStripeCheckout = () => {
   const [error, setError] = useState(null);
