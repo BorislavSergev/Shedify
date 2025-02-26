@@ -61,8 +61,6 @@ const Dashboard = () => {
   });
 
   const [searchParams] = useSearchParams();
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [inviteDetails, setInviteDetails] = useState(null);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -446,129 +444,6 @@ const Dashboard = () => {
     return revenue;
   };
 
-  // Add this function to handle invitation acceptance
-  const handleAcceptInvite = async () => {
-    try {
-      const token = searchParams.get('token');
-      const businessId = searchParams.get('business');
-
-      // First, verify the invitation
-      const { data: inviteData, error: inviteError } = await supabase
-        .from('businessteaminvites')
-        .select('*')
-        .eq('token', token)
-        .eq('businessid', businessId)
-        .single();
-
-      if (inviteError) throw inviteError;
-
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      // Add user to BusinessTeam
-      const { error: teamError } = await supabase
-        .from('BusinessTeam')
-        .insert([{
-          userId: user.id,
-          businessId: businessId,
-        }]);
-
-      if (teamError) throw teamError;
-
-      // Add permissions
-      if (inviteData.permissions && inviteData.permissions.length > 0) {
-        const { data: businessTeamData } = await supabase
-          .from('BusinessTeam')
-          .select('id')
-          .eq('userId', user.id)
-          .eq('businessId', businessId)
-          .single();
-
-        const permissionsToInsert = inviteData.permissions.map(permissionId => ({
-          businessTeamId: businessTeamData.id,
-          permissionId: permissionId
-        }));
-
-        const { error: permissionsError } = await supabase
-          .from('BusinessTeam_Permissions')
-          .insert(permissionsToInsert);
-
-        if (permissionsError) throw permissionsError;
-      }
-
-      // Delete the invitation
-      await supabase
-        .from('businessteaminvites')
-        .delete()
-        .eq('token', token);
-
-      // Update UI
-      setShowInviteDialog(false);
-      window.location.href = '/dashboard'; // Refresh to update the UI
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      alert(translate('errorAcceptingInvitation'));
-    }
-  };
-
-  // Add this function to handle invitation decline
-  const handleDeclineInvite = async () => {
-    try {
-      const token = searchParams.get('token');
-      
-      // Delete the invitation
-      const { error } = await supabase
-        .from('businessteaminvites')
-        .delete()
-        .eq('token', token);
-
-      if (error) throw error;
-
-      // Update UI
-      setShowInviteDialog(false);
-      window.location.href = '/dashboard'; // Refresh to update the UI
-    } catch (error) {
-      console.error('Error declining invitation:', error);
-      alert(translate('errorDecliningInvitation'));
-    }
-  };
-
-  // Add this effect to check for invitation parameters
-  useEffect(() => {
-    const checkInvitation = async () => {
-      const token = searchParams.get('token');
-      const businessId = searchParams.get('business');
-
-      if (token && businessId) {
-        try {
-          // Fetch invitation details
-          const { data: inviteData, error } = await supabase
-            .from('businessteaminvites')
-            .select(`
-              *,
-              Business:businessid (
-                name
-              )
-            `)
-            .eq('token', token)
-            .eq('businessid', businessId)
-            .single();
-
-          if (error) throw error;
-
-          setInviteDetails(inviteData);
-          setShowInviteDialog(true);
-        } catch (error) {
-          console.error('Error fetching invitation details:', error);
-          alert(translate('invalidInvitation'));
-        }
-      }
-    };
-
-    checkInvitation();
-  }, [searchParams]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -944,34 +819,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Add Invitation Dialog */}
-      {showInviteDialog && inviteDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">
-              {translate('businessInvitation')}
-            </h2>
-            <p className="mb-6">
-              {translate('invitationMessage', { businessName: inviteDetails.Business.name })}
-            </p>
-            <div className="flex flex-col sm:flex-row justify-end gap-4">
-              <button
-                onClick={handleDeclineInvite}
-                className="w-full sm:w-auto px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {translate('decline')}
-              </button>
-              <button
-                onClick={handleAcceptInvite}
-                className="w-full sm:w-auto px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
-              >
-                {translate('accept')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
