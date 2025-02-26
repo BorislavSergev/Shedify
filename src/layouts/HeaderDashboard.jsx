@@ -206,28 +206,18 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
       if (teamError) throw new Error(teamError.message);
 
-      // Get permission IDs for the invited user's permissions
-      if (invite.permissions?.permissions?.length > 0) {
-        const { data: permissionIds, error: permError } = await supabase
-          .from("Permissions")
-          .select('id')
-          .in('permission', invite.permissions.permissions);
+      // Insert permissions from the invite directly into BusinessTeam_Permissions
+      if (invite.permissions?.permissionIds?.length > 0) {
+        const permissionsToInsert = invite.permissions.permissionIds.map(permissionId => ({
+          businessTeamId: businessTeam.id,
+          permissionId: permissionId
+        }));
 
-        if (permError) throw new Error(permError.message);
+        const { error: permInsertError } = await supabase
+          .from("BusinessTeam_Permissions")
+          .insert(permissionsToInsert);
 
-        // Create BusinessTeam_Permissions entries
-        if (permissionIds?.length > 0) {
-          const permissionsToInsert = permissionIds.map(perm => ({
-            businessTeamId: businessTeam.id,
-            permissionId: perm.id
-          }));
-
-          const { error: permInsertError } = await supabase
-            .from("BusinessTeam_Permissions")
-            .insert(permissionsToInsert);
-
-          if (permInsertError) throw new Error(permInsertError.message);
-        }
+        if (permInsertError) throw new Error(permInsertError.message);
       }
 
       // Delete the invite
