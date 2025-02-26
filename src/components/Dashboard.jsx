@@ -185,12 +185,14 @@ const Dashboard = () => {
           today: [],
           tomorrow: [],
           nextWeek: [],
+          upcoming: [],
           past: []
         },
         accepted: {
           today: [],
           tomorrow: [],
           nextWeek: [],
+          upcoming: [],
           thisMonth: []
         }
       };
@@ -212,6 +214,8 @@ const Dashboard = () => {
             organizedReservations.pending.nextWeek.push(reservation);
           } else if (reservationDate < startOfToday) {
             organizedReservations.pending.past.push(reservation);
+          } else {
+            organizedReservations.pending.upcoming.push(reservation);
           }
         } else if (reservation.status === 'approved') {
           if (isToday(reservationDate)) {
@@ -224,6 +228,8 @@ const Dashboard = () => {
             organizedReservations.accepted.nextWeek.push(reservation);
           } else if (isThisMonth(reservationDate) && !isThisWeek(reservationDate)) {
             organizedReservations.accepted.thisMonth.push(reservation);
+          } else {
+            organizedReservations.accepted.upcoming.push(reservation);
           }
         }
       });
@@ -659,21 +665,19 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* This Month's Accepted */}
-          {stats.acceptedReservations.thisMonth.length > 0 && (
-            <div>
+          {/* Upcoming Accepted */}
+          {stats.acceptedReservations.upcoming.length > 0 && (
+            <div className="mb-6">
               <button 
-                onClick={() => toggleSection('thisMonth')}
+                onClick={() => toggleSection('upcoming')}
                 className="w-full flex justify-between items-center text-lg font-medium text-gray-900 mb-3 hover:text-accent"
               >
-                <span>{translate("thisMonth")} ({stats.acceptedReservations.thisMonth.length})</span>
-                <span className="transform transition-transform duration-200">
-                  {expandedSections.thisMonth ? '↑' : '↓'}
-                </span>
+                <span>{translate("upcoming")} ({stats.acceptedReservations.upcoming.length})</span>
+                <span>{expandedSections.upcoming ? '↑' : '↓'}</span>
               </button>
-              {expandedSections.thisMonth && (
+              {expandedSections.upcoming && (
                 <div className="space-y-3">
-                  {stats.acceptedReservations.thisMonth.map(reservation => (
+                  {stats.acceptedReservations.upcoming.map(reservation => (
                     <AcceptedReservationCard key={reservation.id} reservation={reservation} />
                   ))}
                 </div>
@@ -751,6 +755,30 @@ const Dashboard = () => {
               {expandedSections.pendingNextWeek && (
                 <div className="space-y-4">
                   {stats.pendingReservations.nextWeek.map((reservation) => (
+                    <ReservationCard
+                      key={reservation.id}
+                      reservation={reservation}
+                      onStatusUpdate={handleStatusUpdate}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Upcoming Pending */}
+          {stats.pendingReservations.upcoming.length > 0 && (
+            <div className="mb-6">
+              <button 
+                onClick={() => toggleSection('pendingUpcoming')}
+                className="w-full flex justify-between items-center text-lg font-medium text-gray-900 mb-3 hover:text-accent"
+              >
+                <span>{translate("upcoming")} ({stats.pendingReservations.upcoming.length})</span>
+                <span>{expandedSections.pendingUpcoming ? '↑' : '↓'}</span>
+              </button>
+              {expandedSections.pendingUpcoming && (
+                <div className="space-y-4">
+                  {stats.pendingReservations.upcoming.map((reservation) => (
                     <ReservationCard
                       key={reservation.id}
                       reservation={reservation}

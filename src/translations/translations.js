@@ -485,6 +485,7 @@ export const translations = {
 
 
     //Permissions
+    upcoming: "Предстоящи",
     settings_general: "Управление на общи настройки",
     manage_delete: "Премахване на служители",
     manage_permisisons: "Управление на разрешения",
@@ -497,6 +498,7 @@ export const translations = {
 
   },
   en: {
+    upcoming: "Upcoming",
     transfer: "Transfer",
     confirmTransferOwnership: "Confirm Transfer Ownership",
     transferOwnershipWarning: "After transferring ownership, you will not be able to revert back. Are you sure you want to transfer ownership?",
