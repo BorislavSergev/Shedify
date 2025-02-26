@@ -13,6 +13,7 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userProfile, setUserProfile] = useState({ firstName: "", avatar: "" });
+  const [businessInvites, setBusinessInvites] = useState([]);
 
   const navigate = useNavigate();
   const { translate, setLanguage } = useLanguage();
@@ -73,7 +74,6 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
         if (businessTeamError) throw new Error(businessTeamError.message);
 
-        // Transform fetched data to match dropdown structure
         const formattedBusinesses = businessTeams.map(({ businessId, Business }) => ({
           id: businessId,
           name: Business.name,
@@ -81,10 +81,31 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
         setBusinesses(formattedBusinesses);
 
-        // If no businesses, redirect to create-business
+        // If no businesses, check for invites
         if (formattedBusinesses.length === 0) {
-          navigate("/create-business");
-          return;
+          const { data: invites, error: invitesError } = await supabase
+            .from("businessteaminvites")
+            .select(`
+              id,
+              businessid,
+              permissions,
+              token,
+              Business (
+                name
+              )
+            `)
+            .eq("email", user.email)
+            .gte("expires_at", new Date().toISOString());
+
+          if (invitesError) throw new Error(invitesError.message);
+          
+          setBusinessInvites(invites);
+
+          // Only redirect to create-business if there are no invites
+          if (invites.length === 0) {
+            navigate("/create-business");
+            return;
+          }
         }
 
         // Check if there's a selected business in localStorage
@@ -171,6 +192,45 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
     setLanguage(event.target.value); // Set language based on user selection
   };
 
+  const handleAcceptInvite = async (invite) => {
+    try {
+      // First create the BusinessTeam entry
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error: teamError } = await supabase
+        .from("BusinessTeam")
+        .insert({
+          userId: user.id,
+          businessId: invite.businessid,
+          permissions: invite.permissions
+        });
+
+      if (teamError) throw new Error(teamError.message);
+
+      // Delete the invite
+      const { error: deleteError } = await supabase
+        .from("businessteaminvites")
+        .delete()
+        .eq("id", invite.id);
+
+      if (deleteError) throw new Error(deleteError.message);
+
+      // Set the business as selected
+      const selectedBusiness = {
+        id: invite.businessid,
+        name: invite.Business.name
+      };
+      setSelectedBusiness(selectedBusiness);
+      localStorage.setItem("selectedBusiness", JSON.stringify(selectedBusiness));
+
+      // Refresh the page to update all components
+      window.location.reload();
+    } catch (err) {
+      console.error("Error accepting invite:", err);
+      alert(translate("errorAcceptingInvite"));
+    }
+  };
+
   return (
     <>
       {loading && (
@@ -243,8 +303,32 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
                       </li>
                     ))}
                   </ul>
+                ) : businessInvites.length > 0 ? (
+                  <>
+                    <div className="block px-4 py-2 text-sm text-gray-700 font-medium">
+                      {translate("pendingInvites")}
+                    </div>
+                    <ul>
+                      {businessInvites.map((invite) => (
+                        <li
+                          key={invite.id}
+                          className="flex items-center justify-between px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
+                        >
+                          <span>{invite.Business.name}</span>
+                          <button
+                            onClick={() => handleAcceptInvite(invite)}
+                            className="text-accent hover:text-accent-dark"
+                          >
+                            {translate("accept")}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
                 ) : (
-                  <div className="block px-4 py-2 text-sm text-gray-500">{translate("noBusinessesAvailable")}</div>
+                  <div className="block px-4 py-2 text-sm text-gray-500">
+                    {translate("noBusinessesAvailable")}
+                  </div>
                 )}
                 <div
                   className="flex items-center px-4 py-2 text-sm text-accent hover:bg-itemsHover cursor-pointer"

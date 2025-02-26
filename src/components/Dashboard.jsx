@@ -521,90 +521,19 @@ const Dashboard = () => {
       .reduce((total, reservation) => total + (reservation.totalPrice || 0), 0);
   };
 
-  // Add this function to handle invitation acceptance
-  const handleAcceptInvite = async (inviteData) => {
-    try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      // Check if user is already in BusinessTeam
-      const { data: existingTeamMember } = await supabase
-        .from('BusinessTeam')
-        .select('id')
-        .eq('userId', user.id)
-        .eq('businessId', inviteData.businessid)
-        .single();
-
-      if (!existingTeamMember) {
-        // Add user to BusinessTeam only if not already a member
-        const { error: teamError } = await supabase
-          .from('BusinessTeam')
-          .insert([{
-            userId: user.id,
-            businessId: inviteData.businessid,
-          }]);
-
-        if (teamError) throw teamError;
-      }
-
-      // Add permissions
-      if (inviteData.permissions && inviteData.permissions.length > 0) {
-        const { data: businessTeamData } = await supabase
-          .from('BusinessTeam')
-          .select('id')
-          .eq('userId', user.id)
-          .eq('businessId', inviteData.businessid)
-          .single();
-
-        const permissionsToInsert = inviteData.permissions.map(permissionId => ({
-          businessTeamId: businessTeamData.id,
-          permissionId: permissionId
-        }));
-
-        const { error: permissionsError } = await supabase
-          .from('BusinessTeam_Permissions')
-          .insert(permissionsToInsert);
-
-        if (permissionsError) throw permissionsError;
-      }
-
-      // Delete the invitation
-      await supabase
-        .from('businessteaminvites')
-        .delete()
-        .eq('token', inviteData.token);
-
-      // Update UI
-      setShowInviteDialog(false);
-      setShowInviteConfirmation(false);
-      navigate('/dashboard'); // This will navigate to the dashboard without a full page reload
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      alert(translate('errorAcceptingInvitation'));
-    }
-  };
-
-  // Replace both handleDeclineInvite functions with this single implementation
-  const handleDeclineInvite = async (inviteId) => {
+  const handleDeclineInvite = async () => {
     try {
       const token = searchParams.get('token');
       
-      // Delete the invitation using either token or inviteId
       const { error } = await supabase
         .from('businessteaminvites')
         .delete()
-        .eq(token ? 'token' : 'id', token || inviteId);
+        .eq('token', token);
 
       if (error) throw error;
 
-      // Update UI based on which type of invite was declined
-      if (token) {
         setShowInviteDialog(false);
         navigate('/dashboard');
-      } else {
-        setPendingInvites(prev => prev.filter(i => i.id !== inviteId));
-      }
     } catch (error) {
       console.error('Error declining invitation:', error);
       alert(translate('errorDecliningInvitation'));
@@ -645,140 +574,6 @@ const Dashboard = () => {
       console.error("Error fetching invitation details:", error);
       showToast('Invalid or expired invitation', 'error');
     }
-  };
-
-  const [userEmail, setUserEmail] = useState(null);
-  const [pendingInvites, setPendingInvites] = useState([]);
-
-  // Add this effect to fetch user email and check for invites
-  useEffect(() => {
-    const checkUserAndInvites = async () => {
-      try {
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-
-        if (user?.email) {
-          setUserEmail(user.email);
-
-          // Fetch pending invites for this email
-          const { data: invites, error: invitesError } = await supabase
-            .from('businessteaminvites')
-            .select(`
-              *,
-              Business:businessid (
-                id,
-                name,
-                description
-              )
-            `)
-            .eq('email', user.email)
-            .gte('expires_at', new Date().toISOString());
-
-          if (invitesError) throw invitesError;
-
-          setPendingInvites(invites || []);
-        }
-      } catch (error) {
-        console.error('Error checking invites:', error);
-      }
-    };
-
-    checkUserAndInvites();
-  }, []);
-
-  // Add this function to handle joining a business
-  const handleJoinBusiness = async (invite) => {
-    try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      // Add user to BusinessTeam
-      const { error: teamError } = await supabase
-        .from('BusinessTeam')
-        .insert([{
-          userId: user.id,
-          businessId: invite.businessid,
-        }]);
-
-      if (teamError) throw teamError;
-
-      // Add permissions if they exist
-      if (invite.permissions && invite.permissions.length > 0) {
-        const { data: businessTeamData } = await supabase
-          .from('BusinessTeam')
-          .select('id')
-          .eq('userId', user.id)
-          .eq('businessId', invite.businessid)
-          .single();
-
-        const permissionsToInsert = invite.permissions.map(permissionId => ({
-          businessTeamId: businessTeamData.id,
-          permissionId: permissionId
-        }));
-
-        const { error: permissionsError } = await supabase
-          .from('BusinessTeam_Permissions')
-          .insert(permissionsToInsert);
-
-        if (permissionsError) throw permissionsError;
-      }
-
-      // Delete the invitation
-      await supabase
-        .from('businessteaminvites')
-        .delete()
-        .eq('id', invite.id);
-
-      // Remove invite from state
-      setPendingInvites(prev => prev.filter(i => i.id !== invite.id));
-
-      // Refresh the page to update UI
-      window.location.reload();
-    } catch (error) {
-      console.error('Error joining business:', error);
-      alert(translate('errorJoiningBusiness'));
-    }
-  };
-
-  // Add this section right after the stats overview section in the return statement
-  const renderPendingInvites = () => {
-    if (pendingInvites.length === 0) return null;
-
-    return (
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {translate('pendingInvitations')} ({pendingInvites.length})
-          </h2>
-        </div>
-        <div className="p-6 space-y-4">
-          {pendingInvites.map(invite => (
-            <div key={invite.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900">{invite.Business.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{invite.Business.description}</p>
-              </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button
-                  onClick={() => handleJoinBusiness(invite)}
-                  className="w-full sm:w-auto px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
-                >
-                  {translate('join')}
-                </button>
-                <button
-                  onClick={() => handleDeclineInvite(invite.id)}
-                  className="w-full sm:w-auto px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  {translate('decline')}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   if (loading) {
@@ -895,9 +690,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Add this line right after the stats overview section */}
-      {renderPendingInvites()}
 
       {/* Accepted Reservations Calendar View */}
       <div className="bg-white rounded-lg shadow-md">
