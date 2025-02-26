@@ -206,7 +206,7 @@ const App = () => {
               <Route path="/reset-password" element={<PublicRoute element={<ResetPassword />} />} />
               
               {/* Business and reservation routes */}
-              <Route path="/business/:id" element={<BusinessPage />} />
+              <Route path="/business/:id" element={<ReservationPage />} />
               <Route path="/business/:businessId/reservation" element={<ReservationPage />} />
               <Route path="/manage/reservation/:id" element={<ManageReservation />} />
 
