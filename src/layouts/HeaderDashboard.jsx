@@ -47,8 +47,7 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
         // Get the logged-in user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) {
-          // Redirect to login if user is not authenticated
-          window.location.href = "/login"; // Redirect to login
+          window.location.href = "/login";
           return;
         }
 
@@ -66,24 +65,13 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
           avatar: userProfileData.avatar,
         });
 
-        // Fetch businesses associated with the user from BusinessTeam
-        const { data: businessTeams, error: businessTeamError } = await supabase
-          .from("BusinessTeam")
-          .select("businessId, Business(name)")
-          .eq("userId", user.id);
-
-        if (businessTeamError) throw new Error(businessTeamError.message);
-
-        const formattedBusinesses = businessTeams.map(({ businessId, Business }) => ({
-          id: businessId,
-          name: Business.name,
-        }));
-
-        setBusinesses(formattedBusinesses);
-
-        // If no businesses, check for invites
-        if (formattedBusinesses.length === 0) {
-          const { data: invites, error: invitesError } = await supabase
+        // Fetch both businesses and invites in parallel
+        const [businessTeamsResponse, invitesResponse] = await Promise.all([
+          supabase
+            .from("BusinessTeam")
+            .select("businessId, Business(name)")
+            .eq("userId", user.id),
+          supabase
             .from("businessteaminvites")
             .select(`
               id,
@@ -95,23 +83,30 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
               )
             `)
             .eq("email", user.email)
-            .gte("expires_at", new Date().toISOString());
+            .gte("expires_at", new Date().toISOString())
+        ]);
 
-          if (invitesError) throw new Error(invitesError.message);
-          
-          setBusinessInvites(invites);
+        if (businessTeamsResponse.error) throw new Error(businessTeamsResponse.error.message);
+        if (invitesResponse.error) throw new Error(invitesResponse.error.message);
 
-          // Only redirect to create-business if there are no invites
-          if (invites.length === 0) {
-            navigate("/create-business");
-            return;
-          }
+        const formattedBusinesses = businessTeamsResponse.data.map(({ businessId, Business }) => ({
+          id: businessId,
+          name: Business.name,
+        }));
+
+        setBusinesses(formattedBusinesses);
+        setBusinessInvites(invitesResponse.data);
+
+        // If no businesses and no invites, redirect to create-business
+        if (formattedBusinesses.length === 0 && invitesResponse.data.length === 0) {
+          navigate("/create-business");
+          return;
         }
 
-        // Check if there's a selected business in localStorage
+        // Handle business selection
         const savedBusiness = localStorage.getItem("selectedBusiness");
         
-        if (!savedBusiness) {
+        if (!savedBusiness && formattedBusinesses.length > 0) {
           // If no business is selected, select the first business
           const firstBusiness = { id: formattedBusinesses[0].id, name: formattedBusinesses[0].name };
           setSelectedBusiness(firstBusiness);
@@ -123,6 +118,7 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
           setSelectedBusiness(soleBusiness);
           localStorage.setItem("selectedBusiness", JSON.stringify(soleBusiness));
         }
+
       } catch (err) {
         setError(err.message || translate("errorFetchingBusinesses"));
       } finally {
@@ -194,18 +190,45 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
   const handleAcceptInvite = async (invite) => {
     try {
-      // First create the BusinessTeam entry
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error: teamError } = await supabase
+      // First create the BusinessTeam entry
+      const { data: businessTeam, error: teamError } = await supabase
         .from("BusinessTeam")
         .insert({
           userId: user.id,
           businessId: invite.businessid,
-          permissions: invite.permissions
-        });
+          worktime: invite.permissions?.worktime || null,
+          bufferTime: invite.permissions?.bufferTime || null
+        })
+        .select('id')
+        .single();
 
       if (teamError) throw new Error(teamError.message);
+
+      // Get permission IDs for the invited user's permissions
+      if (invite.permissions?.permissions?.length > 0) {
+        const { data: permissionIds, error: permError } = await supabase
+          .from("Permissions")
+          .select('id')
+          .in('permission', invite.permissions.permissions);
+
+        if (permError) throw new Error(permError.message);
+
+        // Create BusinessTeam_Permissions entries
+        if (permissionIds?.length > 0) {
+          const permissionsToInsert = permissionIds.map(perm => ({
+            businessTeamId: businessTeam.id,
+            permissionId: perm.id
+          }));
+
+          const { error: permInsertError } = await supabase
+            .from("BusinessTeam_Permissions")
+            .insert(permissionsToInsert);
+
+          if (permInsertError) throw new Error(permInsertError.message);
+        }
+      }
 
       // Delete the invite
       const { error: deleteError } = await supabase
@@ -215,13 +238,29 @@ const HeaderDashboard = ({ onSidebarToggle }) => {
 
       if (deleteError) throw new Error(deleteError.message);
 
-      // Set the business as selected
-      const selectedBusiness = {
-        id: invite.businessid,
-        name: invite.Business.name
-      };
-      setSelectedBusiness(selectedBusiness);
-      localStorage.setItem("selectedBusiness", JSON.stringify(selectedBusiness));
+      // Update businesses list
+      const { data: newBusiness } = await supabase
+        .from("Business")
+        .select("id, name")
+        .eq("id", invite.businessid)
+        .single();
+
+      if (newBusiness) {
+        setBusinesses(prev => [...prev, { id: newBusiness.id, name: newBusiness.name }]);
+        
+        // Set as selected business if it's the first one
+        if (businesses.length === 0) {
+          const selected = { id: newBusiness.id, name: newBusiness.name };
+          setSelectedBusiness(selected);
+          localStorage.setItem("selectedBusiness", JSON.stringify(selected));
+        }
+      }
+
+      // Remove the invite from the list
+      setBusinessInvites(prev => prev.filter(inv => inv.id !== invite.id));
+
+      // Show success message
+      alert(translate("inviteAcceptedSuccessfully"));
 
       // Refresh the page to update all components
       window.location.reload();
