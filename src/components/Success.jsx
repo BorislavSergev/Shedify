@@ -84,67 +84,71 @@ const Success = () => {
       setLoading(true);
       setError(null);
 
-      // Add detailed debugging logs
-
-
-
-      // Add validation for required data before making the API call
       const subscription = localStorage.getItem('subscription');
       const parsedSubscription = subscription ? JSON.parse(subscription) : null;
       
       if (!parsedSubscription) {
-        console.error('Missing subscription data:', {
-          subscription,
-          parsedSubscription
-        });
-        // Redirect to plans page if no subscription data is found
+        console.error('Missing subscription data:', { subscription, parsedSubscription });
         navigate('/dashboard');
         return;
       }
 
       if (!selectedBusiness?.id) {
-        // Redirect to business selection if no business is selected
         navigate('/businesses');
         return;
       }
 
-      const response = await fetch(`https://stripe.swiftabook.com/api/checkout-session/${sessionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+      // Implement retry logic with exponential backoff
+      let lastError;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            // Wait with exponential backoff before retrying
+            await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt - 1)));
+          }
 
-      if (!response.ok) {
-        throw new Error(`${t('httpError')}: ${response.status}`);
-      }
+          const response = await fetch(`https://stripe.shedify.eu/api/checkout-session/${sessionId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            // Add timeout to prevent hanging requests
+            signal: AbortSignal.timeout(10000), // 10 second timeout
+          });
 
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error.message || t('errorProcessingPayment'));
-      }
+          if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+          }
 
-      // Validate payment status
-      if (data.payment_status !== 'paid' || data.status !== 'complete') {
-        throw new Error(t('paymentIncomplete'));
-      }
+          const data = await response.json();
+          
+          if (data.error) {
+            throw new Error(data.error.message || t('errorProcessingPayment'));
+          }
 
-      setSubscriptionInfo(data);
-      setPlanName(parsedSubscription);
+          // Rest of the success logic
+          setSubscriptionInfo(data);
+          setPlanName(parsedSubscription);
 
-      if (data.customer && data.subscription) {
-        await updateBusinessPlan(
-          parsedSubscription.id, 
-          data.customer,
-          data.subscription
-        );
-        
-        // Clear subscription data from localStorage after successful update
-        localStorage.removeItem('subscription');
-      } else {
-        throw new Error(t('missingSubscriptionInfo'));
+          if (data.customer && data.subscription) {
+            await updateBusinessPlan(
+              parsedSubscription.id, 
+              data.customer,
+              data.subscription
+            );
+            localStorage.removeItem('subscription');
+            return; // Success - exit the retry loop
+          } else {
+            throw new Error(t('missingSubscriptionInfo'));
+          }
+        } catch (err) {
+          lastError = err;
+          console.error(`Attempt ${attempt + 1}/${maxRetries + 1} failed:`, err);
+          if (attempt === maxRetries) {
+            throw err; // Rethrow the last error if we're out of retries
+          }
+        }
       }
     } catch (err) {
       console.error('Error details:', {
