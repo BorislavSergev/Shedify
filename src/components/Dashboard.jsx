@@ -25,7 +25,8 @@ const Dashboard = () => {
         today: [],
         tomorrow: [],
         thisWeek: [],
-        thisMonth: []
+        thisMonth: [],
+        incoming: []
       },
       totalTeamMembers: 0,
       totalOffers: 0,
@@ -194,7 +195,8 @@ const Dashboard = () => {
             today: [],
             tomorrow: [],
             thisWeek: [],
-            thisMonth: []
+            thisMonth: [],
+            incoming: []
           }
         };
 
@@ -210,6 +212,12 @@ const Dashboard = () => {
               organizedReservations.pending.past.push(reservation);
             }
           } else if (reservation.status === 'approved') {
+            // First, add to incoming if it's in the future
+            if (reservationDate > currentDate) {
+              organizedReservations.accepted.incoming.push(reservation);
+            }
+            
+            // Then categorize by time period
             if (isToday(reservationDate)) {
               organizedReservations.accepted.today.push(reservation);
             } else if (isTomorrow(reservationDate)) {
@@ -244,6 +252,14 @@ const Dashboard = () => {
 
         setStats(fetchedStats);
         localStorage.setItem('dashboardStats', JSON.stringify(fetchedStats));
+
+        console.log('Organized Reservations:', {
+          incoming: fetchedStats.acceptedReservations.incoming,
+          today: fetchedStats.acceptedReservations.today,
+          tomorrow: fetchedStats.acceptedReservations.tomorrow,
+          thisWeek: fetchedStats.acceptedReservations.thisWeek,
+          thisMonth: fetchedStats.acceptedReservations.thisMonth
+        });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setError(error.message);
@@ -460,66 +476,55 @@ const Dashboard = () => {
     return revenue;
   };
 
-  // Add this function to handle invitation acceptance
-  const handleAcceptInvite = async (inviteData) => {
-    try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+  const calculateTeamRevenue = (period) => {
+    const now = new Date();
+    let startDate;
+    let endDate = new Date(now.setHours(23, 59, 59, 999));
 
-      // Add user to BusinessTeam
-      const { error: teamError } = await supabase
-        .from('BusinessTeam')
-        .insert([{
-          userId: user.id,
-          businessId: inviteData.businessid,
-        }]);
-
-      if (teamError) throw teamError;
-
-      // Add permissions
-      if (inviteData.permissions && inviteData.permissions.length > 0) {
-        const { data: businessTeamData } = await supabase
-          .from('BusinessTeam')
-          .select('id')
-          .eq('userId', user.id)
-          .eq('businessId', inviteData.businessid)
-          .single();
-
-        const permissionsToInsert = inviteData.permissions.map(permissionId => ({
-          businessTeamId: businessTeamData.id,
-          permissionId: permissionId
-        }));
-
-        const { error: permissionsError } = await supabase
-          .from('BusinessTeam_Permissions')
-          .insert(permissionsToInsert);
-
-        if (permissionsError) throw permissionsError;
-      }
-
-      // Delete the invitation
-      await supabase
-        .from('businessteaminvites')
-        .delete()
-        .eq('token', inviteData.token);
-
-      // Update UI
-      setShowInviteDialog(false);
-      setShowInviteConfirmation(false);
-      navigate('/dashboard'); // This will navigate to the dashboard without a full page reload
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      alert(translate('errorAcceptingInvitation'));
+    switch (period) {
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'threeMonths':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'custom':
+        if (customDateRange.start && customDateRange.end) {
+          startDate = new Date(customDateRange.start);
+          endDate = new Date(customDateRange.end);
+        }
+        break;
+      default:
+        startDate = new Date(now.setHours(0, 0, 0, 0));
     }
+
+    // Get all approved reservations for the business
+    const approvedReservations = Object.values(stats.acceptedReservations)
+      .flat()
+      .filter(reservation => 
+        reservation.status === 'approved' && 
+        reservation.businessId === selectedBusiness.id
+      );
+    
+    // Calculate total revenue for the selected period
+    return approvedReservations
+      .filter(reservation => {
+        const reservationDate = new Date(reservation.reservationAt);
+        return reservationDate >= startDate && reservationDate <= endDate;
+      })
+      .reduce((total, reservation) => total + (reservation.totalPrice || 0), 0);
   };
 
-  // Add this function to handle invitation decline
   const handleDeclineInvite = async () => {
     try {
       const token = searchParams.get('token');
       
-      // Delete the invitation
       const { error } = await supabase
         .from('businessteaminvites')
         .delete()
@@ -527,9 +532,8 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      // Update UI
-      setShowInviteDialog(false);
-      navigate('/dashboard'); // Refresh to update the UI
+        setShowInviteDialog(false);
+        navigate('/dashboard');
     } catch (error) {
       console.error('Error declining invitation:', error);
       alert(translate('errorDecliningInvitation'));
@@ -793,6 +797,58 @@ const Dashboard = () => {
             </div>
           )}
 
+          {/* Incoming Reservations */}
+          {stats.acceptedReservations.incoming.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md mb-6">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {translate("incomingReservations")} ({stats.acceptedReservations.incoming.length})
+                  </h2>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="space-y-4">
+                  {stats.acceptedReservations.incoming
+                    .sort((a, b) => new Date(a.reservationAt) - new Date(b.reservationAt))
+                    .map((reservation) => (
+                      <div key={reservation.id} className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              {reservation.firstName} {reservation.lastName}
+                            </h3>
+                            <div className="text-sm text-gray-500 space-y-1 mt-1">
+                              <p className="flex items-center">
+                                <span className="mr-2">📅</span>
+                                {format(new Date(reservation.reservationAt), "PPp")}
+                              </p>
+                              <p className="flex items-center">
+                                <span className="mr-2">⏱️</span>
+                                {translate("duration")}: {reservation.timeToMake} {translate("minutes")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="sm:text-right">
+                            <p className="text-sm font-medium text-gray-900">
+                              {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {Array.isArray(reservation.services) ? reservation.services.join(", ") : reservation.services}
+                            </p>
+                            <p className="text-sm font-medium text-accent mt-1">
+                              {reservation.totalPrice?.toFixed(2)} лв.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {Object.values(stats.acceptedReservations).every(arr => arr.length === 0) && (
             <p className="text-gray-500 text-center py-4">{translate("noUpcomingAcceptedReservations")}</p>
           )}
@@ -909,9 +965,9 @@ const Dashboard = () => {
               value={selectedRevenuePeriod}
               onChange={(e) => setSelectedRevenuePeriod(e.target.value)}
             >
-              <option value="today">{translate("today")}</option>
               <option value="week">{translate("lastWeek")}</option>
               <option value="month">{translate("lastMonth")}</option>
+              <option value="threeMonths">{translate("last3Months")}</option>
               <option value="custom">{translate("customRange")}</option>
             </select>
           </div>
@@ -936,13 +992,13 @@ const Dashboard = () => {
 
         <div className="mt-4">
           <div className="text-3xl font-bold text-gray-900">
-            {calculateRevenue(selectedRevenuePeriod).toFixed(2)} лв.
+            {calculateTeamRevenue(selectedRevenuePeriod).toFixed(2)} лв.
           </div>
           
           <div className="mt-2 text-sm text-gray-500">
-            {selectedRevenuePeriod === 'today' && translate("todayRevenue")}
             {selectedRevenuePeriod === 'week' && translate("lastWeekRevenue")}
             {selectedRevenuePeriod === 'month' && translate("lastMonthRevenue")}
+            {selectedRevenuePeriod === 'threeMonths' && translate("last3MonthsRevenue")}
             {selectedRevenuePeriod === 'custom' && translate("customRangeRevenue")}
           </div>
         </div>
@@ -982,10 +1038,10 @@ const Dashboard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full m-4">
             <h2 className="text-xl font-semibold mb-4">
-              Join {inviteDetails.Business.name}
+              {translate('join')} {inviteDetails.Business.name}
             </h2>
             <p className="mb-6">
-              You have been invited to join {inviteDetails.Business.name}. Would you like to accept this invitation?
+              {translate("invite msg")} {inviteDetails.Business.name}. {translate("wouldYouLikeToAccept")}
             </p>
             <div className="flex justify-end gap-4">
               <button
@@ -995,13 +1051,13 @@ const Dashboard = () => {
                 }}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
               >
-                Decline
+                {translate("decline")}
               </button>
               <button
                 onClick={() => handleAcceptInvite(inviteDetails)}
                 className="px-4 py-2 bg-accent text-white rounded hover:bg-accent/90"
               >
-                Accept
+                {translate("accept")}
               </button>
             </div>
           </div>
