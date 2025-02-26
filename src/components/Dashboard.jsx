@@ -93,6 +93,10 @@ const Dashboard = () => {
       setLoading(true);
       
       const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTimeInMinutes = currentHour * 60 + currentMinutes;
+      
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
       const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -190,10 +194,16 @@ const Dashboard = () => {
 
       reservations.forEach(reservation => {
         const reservationDate = new Date(reservation.reservationAt);
+        const reservationHour = reservationDate.getHours();
+        const reservationMinutes = reservationDate.getMinutes();
+        const reservationTimeInMinutes = reservationHour * 60 + reservationMinutes;
         
         if (reservation.status === 'pending') {
           if (isToday(reservationDate)) {
-            organizedReservations.pending.today.push(reservation);
+            // Only include today's pending reservations that are in the future
+            if (reservationTimeInMinutes > currentTimeInMinutes) {
+              organizedReservations.pending.today.push(reservation);
+            }
           } else if (reservationDate > currentDate) {
             organizedReservations.pending.upcoming.push(reservation);
           } else {
@@ -201,7 +211,10 @@ const Dashboard = () => {
           }
         } else if (reservation.status === 'approved') {
           if (isToday(reservationDate)) {
-            organizedReservations.accepted.today.push(reservation);
+            // Only include today's accepted reservations that are in the future
+            if (reservationTimeInMinutes > currentTimeInMinutes) {
+              organizedReservations.accepted.today.push(reservation);
+            }
           } else if (isTomorrow(reservationDate)) {
             organizedReservations.accepted.tomorrow.push(reservation);
           } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
