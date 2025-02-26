@@ -253,7 +253,7 @@ const Dashboard = () => {
       if (error) throw error;
 
       // Get the reservation details
-      const { data: reservation } = await supabase
+      const { data: reservation, error: reservationError } = await supabase
         .from("Reservations")
         .select(`
           *,
@@ -267,55 +267,69 @@ const Dashboard = () => {
         .eq("id", reservationId)
         .single();
 
+      if (reservationError) throw reservationError;
+
       // Format date and time
       const date = format(new Date(reservation.reservationAt), "dd/MM/yyyy");
       const hour = format(new Date(reservation.reservationAt), "HH:mm");
 
       // Send email notification based on status
       if (newStatus === 'approved') {
-        // Send acceptance email
-        await axios.post(`${BACKEND_EMAIL_URL}/accepted-reservation`, {
-          name: `${reservation.firstName} ${reservation.lastName}`,
-          business: selectedBusiness.name,
-          email: reservation.email,
-          date,
-          hour,
-          services: reservation.services
-        });
+        try {
+          // Send acceptance email
+          await axios.post(`${BACKEND_EMAIL_URL}/accepted-reservation`, {
+            name: `${reservation.firstName} ${reservation.lastName}`,
+            business: selectedBusiness.name,
+            email: reservation.email,
+            date,
+            hour,
+            services: reservation.services
+          });
 
-        // Schedule reminder email
-        const reminderResponse = await axios.post(`${BACKEND_EMAIL_URL}/schedule-reminder`, {
-          name: `${reservation.firstName} ${reservation.lastName}`,
-          business: selectedBusiness.name,
-          email: reservation.email,
-          date,
-          hour,
-          services: reservation.services
-        });
+          // Schedule reminder email
+          const reminderResponse = await axios.post(`${BACKEND_EMAIL_URL}/schedule-reminder`, {
+            name: `${reservation.firstName} ${reservation.lastName}`,
+            business: selectedBusiness.name,
+            email: reservation.email,
+            date,
+            hour,
+            services: reservation.services
+          });
 
-        // Update reservation with reminderId
-        const { error: updateError } = await supabase
-          .from("Reservations")
-          .update({ 
-            reminderId: reminderResponse.id
-          })
-          .eq("id", reservationId);
+          // Update reservation with reminderId
+          if (reminderResponse?.data?.id) {
+            const { error: updateError } = await supabase
+              .from("Reservations")
+              .update({ 
+                reminderId: reminderResponse.data.id
+              })
+              .eq("id", reservationId);
 
-        if (updateError) throw updateError;
-
+            if (updateError) console.error("Error updating reminder ID:", updateError);
+          }
+        } catch (emailError) {
+          console.error("Error sending emails:", emailError);
+          // Continue execution even if email fails
+        }
       } else if (newStatus === 'cancelled') {
-        await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
-          name: `${reservation.firstName} ${reservation.lastName}`,
-          business: selectedBusiness.name,
-          email: reservation.email,
-          reason: "Съжаляваме, но резервацията Ви беше отказана."
-        });
+        try {
+          await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
+            name: `${reservation.firstName} ${reservation.lastName}`,
+            business: selectedBusiness.name,
+            email: reservation.email,
+            reason: "Съжаляваме, но резервацията Ви беше отказана."
+          });
+        } catch (emailError) {
+          console.error("Error sending rejection email:", emailError);
+          // Continue execution even if email fails
+        }
       }
 
-      fetchDashboardData();
+      // Refresh dashboard data regardless of email success/failure
+      await fetchDashboardData();
     } catch (error) {
       console.error("Error updating reservation status:", error);
-      setError(error.message);
+      throw error; // Propagate error to ReservationCard component
     }
   };
 
@@ -1017,6 +1031,18 @@ const AcceptedReservationCard = ({ reservation }) => {
 // Reservation Card Component
 const ReservationCard = ({ reservation, onStatusUpdate }) => {
   const { translate } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleStatusUpdate = async (status) => {
+    setIsLoading(true);
+    try {
+      await onStatusUpdate(reservation.id, status);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   return (
     <div className="p-4 bg-gray-50 rounded-lg">
@@ -1047,16 +1073,40 @@ const ReservationCard = ({ reservation, onStatusUpdate }) => {
           </div>
           <div className="flex gap-2 justify-start sm:justify-end">
             <button
-              onClick={() => onStatusUpdate(reservation.id, 'approved')}
-              className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              onClick={() => handleStatusUpdate('approved')}
+              disabled={isLoading}
+              className={`px-3 py-1 text-white rounded-md text-sm transition-colors
+                ${isLoading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-green-600 hover:bg-green-700'}`}
             >
-              {translate("accept")}
+              {isLoading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {translate("processing")}
+                </span>
+              ) : translate("accept")}
             </button>
             <button
-              onClick={() => onStatusUpdate(reservation.id, 'cancelled')}
-              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+              onClick={() => handleStatusUpdate('cancelled')}
+              disabled={isLoading}
+              className={`px-3 py-1 text-white rounded-md text-sm transition-colors
+                ${isLoading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-red-600 hover:bg-red-700'}`}
             >
-              {translate("decline")}
+              {isLoading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {translate("processing")}
+                </span>
+              ) : translate("decline")}
             </button>
           </div>
         </div>
