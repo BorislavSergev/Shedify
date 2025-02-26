@@ -575,6 +575,14 @@ const ReservationPage = () => {
     }
   }, [step]);
 
+  // Update the useEffect that sets available offers
+  useEffect(() => {
+    if (availableOffers.length === 1) {
+      // Automatically select the single offer
+      setSelectedOffer(availableOffers[0]);
+    }
+  }, [availableOffers]);
+
   // ── HANDLERS ─────────────────────────
   const handleTeamMemberSelect = (member) => {
     setSelectedTeamMember(member);
@@ -1473,21 +1481,20 @@ const ReservationPage = () => {
                 {availableOffers.map((offer) => (
                   <motion.div
                     key={offer.id}
-                    whileHover={{ scale: 1.02 }}
-                    className={`p-6 rounded-xl shadow-md cursor-pointer transition-all duration-200 ${
+                    className={`p-6 rounded-xl shadow-md transition-all duration-200 ${
                       selectedOffer?.id === offer.id 
                         ? 'ring-2 text-black'
-                        : 'bg-white text-gray-800 hover:shadow-lg'
+                        : 'bg-black text-gray-800'
                     }`}
-                    style={selectedOffer?.id === offer.id ? {} : { border: '2px solid #E5E7EB' }}
+                    style={selectedOffer?.id === offer.id ? {} : { border: `2px solid ${themeData?.general?.color}` }}
                   >
                     <div className="flex flex-col h-full">
                       <div className="flex-grow">
                         <h4 className={`text-lg font-semibold mb-2 ${
-                          selectedOffer?.id === offer.id ? 'text-white' : 'text-gray-800'
+                          selectedOffer?.id === offer.id ? 'text-black' : 'text-gray-800'
                         }`}>{offer.Services.name}</h4>
                         <div className={`space-y-2 ${
-                          selectedOffer?.id === offer.id ? 'text-white' : 'text-gray-600'
+                          selectedOffer?.id === offer.id ? 'text-black' : 'text-gray-600'
                         }`}> 
                           <p>
                             <span className="font-medium">{translate('duration')}:</span>{' '}
@@ -1509,7 +1516,7 @@ const ReservationPage = () => {
                                     ? 'rgba(255, 255, 255, 0.2)' 
                                     : getLighterShade(themeData?.general?.color, 0.1),
                                   color: selectedOffer?.id === offer.id 
-                                    ? 'white' 
+                                    ? 'black' 
                                     : themeData?.general?.color
                                 }}>
                                 {offer.discount_percentage}% {translate('off')}
@@ -1543,10 +1550,7 @@ const ReservationPage = () => {
                 </button>
                 <button
                   onClick={handleAcceptOffer}
-                  disabled={!selectedOffer}
-                  className={`px-6 py-3 rounded-lg text-white font-medium shadow-md transition-transform ${
-                    selectedOffer ? 'hover:scale-105' : 'opacity-50 cursor-not-allowed'
-                  }`}
+                  className="px-6 py-3 rounded-lg text-white font-medium shadow-md transition-transform hover:scale-105"
                   style={themeStyles.accent}
                 >
                   {translate('accept')}

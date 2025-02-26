@@ -15,6 +15,7 @@ export const translations = {
     lastWeekEarnings: "Приходи за последната седмица",
     lastMonthEarnings: "Приходи за последния месец",
     customRangeEarnings: "Приходи за избран период",
+    noPermissionToManageGeneralSettings: "Нямате права за управление на общите настройки",
 
     noReservationsFound: "Няма намерени резервации",
     noPendingReservationsMessage: "Няма чакащи резервации",
