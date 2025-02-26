@@ -1474,7 +1474,6 @@ const ReservationPage = () => {
                   <motion.div
                     key={offer.id}
                     whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     className={`p-6 rounded-xl shadow-md cursor-pointer transition-all duration-200 ${
                       selectedOffer?.id === offer.id 
                         ? 'ring-2 text-black'

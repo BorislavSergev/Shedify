@@ -65,7 +65,7 @@ const Plans = () => {
   const goToCustomerPortal = async () => {
     setIsManageLoading(true); // Set loading state
     try {
-      const response = await fetch('https://stripe.swiftabook.com/create-portal-session', {
+      const response = await fetch('https://stripe.shedify.eu/create-portal-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

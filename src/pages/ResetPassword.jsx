@@ -50,20 +50,32 @@ const ResetPassword = () => {
     setErrorMessages([]);
     setSuccessMessage("");
 
-    if (!email) {
-      setErrorMessages([translate("EMAIL_REQUIRED")]);
+    // Validate email format
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailPattern.test(email)) {
+      setErrorMessages([translate("INVALID_EMAIL")]);
       return;
     }
 
     try {
       setLoading(true);
+      console.log('Checking if user exists for email:', email);
+      const { data: { user }, error: userError } = await supabase.auth.api.getUserByEmail(email);
+
+      if (userError || !user) {
+        setErrorMessages([translate("EMAIL_NOT_REGISTERED")]);
+        return;
+      }
+
+      console.log('Sending recovery email to:', email); // Log the email being sent
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password'  // Use dynamic origin
+        redirectTo: 'https://example.com/update-password', // Add your redirect URL here
       });
       
       if (error) {
-        console.error('Error sending recovery email:', error.message);
-        throw error;
+        console.error('Error sending recovery email:', error);
+        setErrorMessages([error.message]);
+        return;
       }
 
       setSuccessMessage(translate("RESET_LINK_SENT"));

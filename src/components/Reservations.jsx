@@ -94,6 +94,7 @@ const Reservations = () => {
   const navigate = useNavigate();
   const [business, setBusiness] = useState(null);
   const [businessLanguage, setBusinessLanguage] = useState('bulgarian');
+  const [loadingReservationId, setLoadingReservationId] = useState(null);
 
   // Get current business from localStorage with safety check
   const selectedBusiness = useMemo(() => {
@@ -239,6 +240,8 @@ const Reservations = () => {
 
   const handleStatusUpdate = async (reservationId, newStatus) => {
     try {
+      setLoadingReservationId(reservationId);
+
       // First update the status in Supabase
       const { error } = await supabase
         .from("Reservations")
@@ -312,6 +315,8 @@ const Reservations = () => {
     } catch (error) {
       console.error("Error updating reservation status:", error);
       setError(error.message);
+    } finally {
+      setLoadingReservationId(null);
     }
   };
 
@@ -607,15 +612,31 @@ const Reservations = () => {
                       variant="success"
                       onClick={() => handleStatusUpdate(reservation.id, "approved")}
                       className="flex-1"
+                      disabled={loadingReservationId === reservation.id}
                     >
-                      {translate('accept')}
+                      {loadingReservationId === reservation.id ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                          {translate('processing')}
+                        </div>
+                      ) : (
+                        translate('accept')
+                      )}
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={() => handleStatusUpdate(reservation.id, "cancelled")}
                       className="flex-1"
+                      disabled={loadingReservationId === reservation.id}
                     >
-                      {translate('reject')}
+                      {loadingReservationId === reservation.id ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                          {translate('processing')}
+                        </div>
+                      ) : (
+                        translate('reject')
+                      )}
                     </Button>
                   </div>
                 )}
