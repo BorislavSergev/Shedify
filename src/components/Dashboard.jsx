@@ -1,34 +1,40 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import supabase from "../hooks/supabase";
 import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
+import { useToast } from '../contexts/ToastContext';
 
 import { BACKEND_EMAIL_URL, FRONTEND_URL } from '../config/config';
 
 const Dashboard = () => {
   const { translate } = useLanguage();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stats, setStats] = useState({
-    pendingReservations: {
-      today: [],
-      upcoming: [],
-      past: []
-    },
-    acceptedReservations: {
-      today: [],
-      tomorrow: [],
-      thisWeek: [],
-      thisMonth: []
-    },
-    totalTeamMembers: 0,
-    totalOffers: 0,
-    recentReservations: [],
-    todayEarnings: 0,
-    totalTeamMemberReservations: 0,
-    totalBusinessReservations: 0
+  const [stats, setStats] = useState(() => {
+    const savedStats = localStorage.getItem('dashboardStats');
+    return savedStats ? JSON.parse(savedStats) : {
+      pendingReservations: {
+        today: [],
+        upcoming: [],
+        past: []
+      },
+      acceptedReservations: {
+        today: [],
+        tomorrow: [],
+        thisWeek: [],
+        thisMonth: [],
+        incoming: []
+      },
+      totalTeamMembers: 0,
+      totalOffers: 0,
+      recentReservations: [],
+      todayEarnings: 0,
+      totalTeamMemberReservations: 0,
+      totalBusinessReservations: 0
+    };
   });
 
   const [todayEarnings, setTodayEarnings] = useState(0);
@@ -63,9 +69,9 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteDetails, setInviteDetails] = useState(null);
+  const [showInviteConfirmation, setShowInviteConfirmation] = useState(false);
 
-  const [userEmail, setUserEmail] = useState(null);
-  const [pendingInvites, setPendingInvites] = useState([]);
+  const navigate = useNavigate();
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -88,162 +94,183 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedBusiness?.id && authenticatedUserId) {
-      fetchDashboardData();
-    }
-  }, [selectedBusiness?.id, authenticatedUserId]);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-
-      // Step 1: Fetch the employeeId
-      const { data: businessTeam, error: businessTeamError } = await supabase
-        .from('BusinessTeam')
-        .select('id')
-        .eq('businessId', selectedBusiness.id)
-        .eq('userId', authenticatedUserId)
-        .single();
-
-      if (businessTeamError) throw businessTeamError;
-
-      const employeeId = businessTeam?.id;
-      if (!employeeId) {
-        throw new Error('Employee ID not found');
+    const fetchDashboardData = async () => {
+      if (stats) {
+        setLoading(false);
+        return;
       }
 
-      // Fetch total reservations for team member
-      const { data: teamMemberReservations, error: teamMemberReservationsError } = await supabase
-        .from('Reservations')
-        .select('id')
-        .eq('employeeId', employeeId);
-
-      if (teamMemberReservationsError) throw teamMemberReservationsError;
-
-      // Fetch total reservations for business
-      const { data: businessReservations, error: businessReservationsError } = await supabase
-        .from('Reservations')
-        .select('id')
-        .eq('businessId', selectedBusiness.id);
-
-      if (businessReservationsError) throw businessReservationsError;
-
-      // Step 2: Fetch reservations
-      const { data: reservations, error: reservationsError } = await supabase
-        .from('Reservations')
-        .select(`
-          *,
-          BusinessTeam (
-            Users (
-              first_name,
-              last_name
-            )
-          )
-        `)
-        .eq('businessId', selectedBusiness.id)
-        .eq('employeeId', employeeId);
-
-      if (reservationsError) throw reservationsError;
-
-      // Step 3: Fetch services
-      // Step 4: Fetch offers
-      const { data: offers, error: offersError } = await supabase
-        .from('Offers')
-        .select('id')
-        .eq('team_member_id', employeeId);
-
-      if (offersError) throw offersError;
-
-      // Step 5: Fetch team members
-      const { data: teamMembers, error: teamMembersError } = await supabase
-        .from('BusinessTeam')
-        .select('id')
-        .eq('businessId', selectedBusiness.id);
-
-      if (teamMembersError) throw teamMembersError;
-
-      // Calculate today's earnings
-      const todayReservations = reservations.filter(reservation => {
-        const reservationDate = new Date(reservation.reservationAt);
-        return reservationDate >= startOfToday && reservationDate <= endOfToday;
-      });
-
-      const totalEarnings = todayReservations.reduce((acc, reservation) => 
-        acc + (reservation.totalPrice || 0), 0);
-      setTodayEarnings(totalEarnings);
-
-      // Updated reservation organization
-      const currentDate = new Date();
-      const organizedReservations = {
-        pending: {
-          today: [],
-          upcoming: [],
-          past: []
-        },
-        accepted: {
-          today: [],
-          tomorrow: [],
-          thisWeek: [],
-          thisMonth: []
-        }
-      };
-
-      reservations.forEach(reservation => {
-        const reservationDate = new Date(reservation.reservationAt);
+      try {
+        setLoading(true);
         
-        if (reservation.status === 'pending') {
-          if (isToday(reservationDate)) {
-            organizedReservations.pending.today.push(reservation);
-          } else if (reservationDate > currentDate) {
-            organizedReservations.pending.upcoming.push(reservation);
-          } else {
-            organizedReservations.pending.past.push(reservation);
-          }
-        } else if (reservation.status === 'approved') {
-          if (isToday(reservationDate)) {
-            organizedReservations.accepted.today.push(reservation);
-          } else if (isTomorrow(reservationDate)) {
-            organizedReservations.accepted.tomorrow.push(reservation);
-          } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
-            organizedReservations.accepted.thisWeek.push(reservation);
-          } else if (isThisMonth(reservationDate) && !isThisWeek(reservationDate)) {
-            organizedReservations.accepted.thisMonth.push(reservation);
-          }
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+        // Step 1: Fetch the employeeId
+        const { data: businessTeam, error: businessTeamError } = await supabase
+          .from('BusinessTeam')
+          .select('id')
+          .eq('businessId', selectedBusiness.id)
+          .eq('userId', authenticatedUserId)
+          .single();
+
+        if (businessTeamError) throw businessTeamError;
+
+        const employeeId = businessTeam?.id;
+        if (!employeeId) {
+          throw new Error('Employee ID not found');
         }
-      });
 
-      // Sort all reservation arrays by date
-      Object.keys(organizedReservations).forEach(status => {
-        Object.keys(organizedReservations[status]).forEach(timeframe => {
-          organizedReservations[status][timeframe].sort((a, b) => 
-            new Date(a.reservationAt) - new Date(b.reservationAt)
-          );
+        // Fetch total reservations for team member
+        const { data: teamMemberReservations, error: teamMemberReservationsError } = await supabase
+          .from('Reservations')
+          .select('id')
+          .eq('employeeId', employeeId);
+
+        if (teamMemberReservationsError) throw teamMemberReservationsError;
+
+        // Fetch total reservations for business
+        const { data: businessReservations, error: businessReservationsError } = await supabase
+          .from('Reservations')
+          .select('id')
+          .eq('businessId', selectedBusiness.id);
+
+        if (businessReservationsError) throw businessReservationsError;
+
+        // Step 2: Fetch reservations
+        const { data: reservations, error: reservationsError } = await supabase
+          .from('Reservations')
+          .select(`
+            *,
+            BusinessTeam (
+              Users (
+                first_name,
+                last_name
+              )
+            )
+          `)
+          .eq('businessId', selectedBusiness.id)
+          .eq('employeeId', employeeId);
+
+        if (reservationsError) throw reservationsError;
+
+        // Step 3: Fetch services
+        // Step 4: Fetch offers
+        const { data: offers, error: offersError } = await supabase
+          .from('Offers')
+          .select('id')
+          .eq('team_member_id', employeeId);
+
+        if (offersError) throw offersError;
+
+        // Step 5: Fetch team members
+        const { data: teamMembers, error: teamMembersError } = await supabase
+          .from('BusinessTeam')
+          .select('id')
+          .eq('businessId', selectedBusiness.id);
+
+        if (teamMembersError) throw teamMembersError;
+
+        // Calculate today's earnings
+        const todayReservations = reservations.filter(reservation => {
+          const reservationDate = new Date(reservation.reservationAt);
+          return reservationDate >= startOfToday && reservationDate <= endOfToday;
         });
-      });
 
-      setStats({
-        pendingReservations: organizedReservations.pending,
-        acceptedReservations: organizedReservations.accepted,
-        totalTeamMembers: teamMembers?.length || 0,
-        totalOffers: offers?.length || 0,
-        recentReservations: reservations.slice(-7) || [],
-        todayEarnings: totalEarnings,
-        totalTeamMemberReservations: teamMemberReservations?.length || 0,
-        totalBusinessReservations: businessReservations?.length || 0
-      });
+        const totalEarnings = todayReservations.reduce((acc, reservation) => 
+          acc + (reservation.totalPrice || 0), 0);
+        setTodayEarnings(totalEarnings);
 
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Updated reservation organization
+        const currentDate = new Date();
+        const organizedReservations = {
+          pending: {
+            today: [],
+            upcoming: [],
+            past: []
+          },
+          accepted: {
+            today: [],
+            tomorrow: [],
+            thisWeek: [],
+            thisMonth: [],
+            incoming: []
+          }
+        };
+
+        reservations.forEach(reservation => {
+          const reservationDate = new Date(reservation.reservationAt);
+          
+          if (reservation.status === 'pending') {
+            if (isToday(reservationDate)) {
+              organizedReservations.pending.today.push(reservation);
+            } else if (reservationDate > currentDate) {
+              organizedReservations.pending.upcoming.push(reservation);
+            } else {
+              organizedReservations.pending.past.push(reservation);
+            }
+          } else if (reservation.status === 'approved') {
+            // First, add to incoming if it's in the future
+            if (reservationDate > currentDate) {
+              organizedReservations.accepted.incoming.push(reservation);
+            }
+            
+            // Then categorize by time period
+            if (isToday(reservationDate)) {
+              organizedReservations.accepted.today.push(reservation);
+            } else if (isTomorrow(reservationDate)) {
+              organizedReservations.accepted.tomorrow.push(reservation);
+            } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
+              organizedReservations.accepted.thisWeek.push(reservation);
+            } else if (isThisMonth(reservationDate) && !isThisWeek(reservationDate)) {
+              organizedReservations.accepted.thisMonth.push(reservation);
+            }
+          }
+        });
+
+        // Sort all reservation arrays by date
+        Object.keys(organizedReservations).forEach(status => {
+          Object.keys(organizedReservations[status]).forEach(timeframe => {
+            organizedReservations[status][timeframe].sort((a, b) => 
+              new Date(a.reservationAt) - new Date(b.reservationAt)
+            );
+          });
+        });
+
+        const fetchedStats = {
+          pendingReservations: organizedReservations.pending,
+          acceptedReservations: organizedReservations.accepted,
+          totalTeamMembers: teamMembers?.length || 0,
+          totalOffers: offers?.length || 0,
+          recentReservations: reservations.slice(-7) || [],
+          todayEarnings: totalEarnings,
+          totalTeamMemberReservations: teamMemberReservations?.length || 0,
+          totalBusinessReservations: businessReservations?.length || 0
+        };
+
+        setStats(fetchedStats);
+        localStorage.setItem('dashboardStats', JSON.stringify(fetchedStats));
+
+        console.log('Organized Reservations:', {
+          incoming: fetchedStats.acceptedReservations.incoming,
+          today: fetchedStats.acceptedReservations.today,
+          tomorrow: fetchedStats.acceptedReservations.tomorrow,
+          thisWeek: fetchedStats.acceptedReservations.thisWeek,
+          thisMonth: fetchedStats.acceptedReservations.thisMonth
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError(error.message);
+        showToast(translate('errorFetchingData'), 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [selectedBusiness?.id, authenticatedUserId]);
 
   const handleStatusUpdate = async (reservationId, newStatus) => {
     try {
@@ -256,7 +283,7 @@ const Dashboard = () => {
       if (error) throw error;
 
       // Get the reservation details
-      const { data: reservation, error: reservationError } = await supabase
+      const { data: reservation } = await supabase
         .from("Reservations")
         .select(`
           *,
@@ -270,69 +297,55 @@ const Dashboard = () => {
         .eq("id", reservationId)
         .single();
 
-      if (reservationError) throw reservationError;
-
       // Format date and time
       const date = format(new Date(reservation.reservationAt), "dd/MM/yyyy");
       const hour = format(new Date(reservation.reservationAt), "HH:mm");
 
       // Send email notification based on status
       if (newStatus === 'approved') {
-        try {
-          // Send acceptance email
-          await axios.post(`${BACKEND_EMAIL_URL}/accepted-reservation`, {
-            name: `${reservation.firstName} ${reservation.lastName}`,
-            business: selectedBusiness.name,
-            email: reservation.email,
-            date,
-            hour,
-            services: reservation.services
-          });
+        // Send acceptance email
+        await axios.post(`${BACKEND_EMAIL_URL}/accepted-reservation`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          date,
+          hour,
+          services: reservation.services
+        });
 
-          // Schedule reminder email
-          const reminderResponse = await axios.post(`${BACKEND_EMAIL_URL}/schedule-reminder`, {
-            name: `${reservation.firstName} ${reservation.lastName}`,
-            business: selectedBusiness.name,
-            email: reservation.email,
-            date,
-            hour,
-            services: reservation.services
-          });
+        // Schedule reminder email
+        const reminderResponse = await axios.post(`${BACKEND_EMAIL_URL}/schedule-reminder`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          date,
+          hour,
+          services: reservation.services
+        });
 
-          // Update reservation with reminderId
-          if (reminderResponse?.data?.id) {
-            const { error: updateError } = await supabase
-              .from("Reservations")
-              .update({ 
-                reminderId: reminderResponse.data.id
-              })
-              .eq("id", reservationId);
+        // Update reservation with reminderId
+        const { error: updateError } = await supabase
+          .from("Reservations")
+          .update({ 
+            reminderId: reminderResponse.id
+          })
+          .eq("id", reservationId);
 
-            if (updateError) console.error("Error updating reminder ID:", updateError);
-          }
-        } catch (emailError) {
-          console.error("Error sending emails:", emailError);
-          // Continue execution even if email fails
-        }
+        if (updateError) throw updateError;
+
       } else if (newStatus === 'cancelled') {
-        try {
-          await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
-            name: `${reservation.firstName} ${reservation.lastName}`,
-            business: selectedBusiness.name,
-            email: reservation.email,
-            reason: "Съжаляваме, но резервацията Ви беше отказана."
-          });
-        } catch (emailError) {
-          console.error("Error sending rejection email:", emailError);
-          // Continue execution even if email fails
-        }
+        await axios.post(`${BACKEND_EMAIL_URL}/rejected-reservation`, {
+          name: `${reservation.firstName} ${reservation.lastName}`,
+          business: selectedBusiness.name,
+          email: reservation.email,
+          reason: "Съжаляваме, но резервацията Ви беше отказана."
+        });
       }
 
-      // Refresh dashboard data regardless of email success/failure
-      await fetchDashboardData();
+      fetchDashboardData();
     } catch (error) {
       console.error("Error updating reservation status:", error);
-      throw error; // Propagate error to ReservationCard component
+      setError(error.message);
     }
   };
 
@@ -463,35 +476,77 @@ const Dashboard = () => {
     return revenue;
   };
 
+  const calculateTeamRevenue = (period) => {
+    const now = new Date();
+    let startDate;
+    let endDate = new Date(now.setHours(23, 59, 59, 999));
+
+    switch (period) {
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'threeMonths':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'custom':
+        if (customDateRange.start && customDateRange.end) {
+          startDate = new Date(customDateRange.start);
+          endDate = new Date(customDateRange.end);
+        }
+        break;
+      default:
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+    }
+
+    // Get all approved reservations for the business
+    const approvedReservations = Object.values(stats.acceptedReservations)
+      .flat()
+      .filter(reservation => 
+        reservation.status === 'approved' && 
+        reservation.businessId === selectedBusiness.id
+      );
+    
+    // Calculate total revenue for the selected period
+    return approvedReservations
+      .filter(reservation => {
+        const reservationDate = new Date(reservation.reservationAt);
+        return reservationDate >= startDate && reservationDate <= endDate;
+      })
+      .reduce((total, reservation) => total + (reservation.totalPrice || 0), 0);
+  };
+
   // Add this function to handle invitation acceptance
-  const handleAcceptInvite = async () => {
+  const handleAcceptInvite = async (inviteData) => {
     try {
-      const token = searchParams.get('token');
-      const businessId = searchParams.get('business');
-
-      // First, verify the invitation
-      const { data: inviteData, error: inviteError } = await supabase
-        .from('businessteaminvites')
-        .select('*')
-        .eq('token', token)
-        .eq('businessid', businessId)
-        .single();
-
-      if (inviteError) throw inviteError;
-
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      // Add user to BusinessTeam
-      const { error: teamError } = await supabase
+      // Check if user is already in BusinessTeam
+      const { data: existingTeamMember } = await supabase
         .from('BusinessTeam')
-        .insert([{
-          userId: user.id,
-          businessId: businessId,
-        }]);
+        .select('id')
+        .eq('userId', user.id)
+        .eq('businessId', inviteData.businessid)
+        .single();
 
-      if (teamError) throw teamError;
+      if (!existingTeamMember) {
+        // Add user to BusinessTeam only if not already a member
+        const { error: teamError } = await supabase
+          .from('BusinessTeam')
+          .insert([{
+            userId: user.id,
+            businessId: inviteData.businessid,
+          }]);
+
+        if (teamError) throw teamError;
+      }
 
       // Add permissions
       if (inviteData.permissions && inviteData.permissions.length > 0) {
@@ -499,7 +554,7 @@ const Dashboard = () => {
           .from('BusinessTeam')
           .select('id')
           .eq('userId', user.id)
-          .eq('businessId', businessId)
+          .eq('businessId', inviteData.businessid)
           .single();
 
         const permissionsToInsert = inviteData.permissions.map(permissionId => ({
@@ -518,33 +573,38 @@ const Dashboard = () => {
       await supabase
         .from('businessteaminvites')
         .delete()
-        .eq('token', token);
+        .eq('token', inviteData.token);
 
       // Update UI
       setShowInviteDialog(false);
-      window.location.href = '/dashboard'; // Refresh to update the UI
+      setShowInviteConfirmation(false);
+      navigate('/dashboard'); // This will navigate to the dashboard without a full page reload
     } catch (error) {
       console.error('Error accepting invitation:', error);
       alert(translate('errorAcceptingInvitation'));
     }
   };
 
-  // Add this function to handle invitation decline
-  const handleDeclineInvite = async () => {
+  // Replace both handleDeclineInvite functions with this single implementation
+  const handleDeclineInvite = async (inviteId) => {
     try {
       const token = searchParams.get('token');
       
-      // Delete the invitation
+      // Delete the invitation using either token or inviteId
       const { error } = await supabase
         .from('businessteaminvites')
         .delete()
-        .eq('token', token);
+        .eq(token ? 'token' : 'id', token || inviteId);
 
       if (error) throw error;
 
-      // Update UI
-      setShowInviteDialog(false);
-      window.location.href = '/dashboard'; // Refresh to update the UI
+      // Update UI based on which type of invite was declined
+      if (token) {
+        setShowInviteDialog(false);
+        navigate('/dashboard');
+      } else {
+        setPendingInvites(prev => prev.filter(i => i.id !== inviteId));
+      }
     } catch (error) {
       console.error('Error declining invitation:', error);
       alert(translate('errorDecliningInvitation'));
@@ -553,38 +613,42 @@ const Dashboard = () => {
 
   // Add this effect to check for invitation parameters
   useEffect(() => {
-    const checkInvitation = async () => {
-      const token = searchParams.get('token');
-      const businessId = searchParams.get('business');
+    const token = searchParams.get('token');
+    const businessId = searchParams.get('business');
 
-      if (token && businessId) {
-        try {
-          // Fetch invitation details
-          const { data: inviteData, error } = await supabase
-            .from('businessteaminvites')
-            .select(`
-              *,
-              Business:businessid (
-                name
-              )
-            `)
-            .eq('token', token)
-            .eq('businessid', businessId)
-            .single();
-
-          if (error) throw error;
-
-          setInviteDetails(inviteData);
-          setShowInviteDialog(true);
-        } catch (error) {
-          console.error('Error fetching invitation details:', error);
-          alert(translate('invalidInvitation'));
-        }
-      }
-    };
-
-    checkInvitation();
+    if (token && businessId) {
+      fetchInviteDetails(token, businessId);
+    }
   }, [searchParams]);
+
+  // Add this function to fetch invite details
+  const fetchInviteDetails = async (token, businessId) => {
+    try {
+      const { data, error } = await supabase
+        .from("businessteaminvites")
+        .select(`
+          *,
+          Business:businessid (
+            id,
+            name
+          )
+        `)
+        .eq("token", token)
+        .eq("businessid", businessId)
+        .single();
+
+      if (error) throw error;
+
+      setInviteDetails(data);
+      setShowInviteConfirmation(true);
+    } catch (error) {
+      console.error("Error fetching invitation details:", error);
+      showToast('Invalid or expired invitation', 'error');
+    }
+  };
+
+  const [userEmail, setUserEmail] = useState(null);
+  const [pendingInvites, setPendingInvites] = useState([]);
 
   // Add this effect to fetch user email and check for invites
   useEffect(() => {
@@ -675,24 +739,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error joining business:', error);
       alert(translate('errorJoiningBusiness'));
-    }
-  };
-
-  // Add this function to decline an invite
-  const handleDeclineInvite = async (inviteId) => {
-    try {
-      const { error } = await supabase
-        .from('businessteaminvites')
-        .delete()
-        .eq('id', inviteId);
-
-      if (error) throw error;
-
-      // Remove invite from state
-      setPendingInvites(prev => prev.filter(i => i.id !== inviteId));
-    } catch (error) {
-      console.error('Error declining invitation:', error);
-      alert(translate('errorDecliningInvitation'));
     }
   };
 
@@ -850,6 +896,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Add this line right after the stats overview section */}
       {renderPendingInvites()}
 
       {/* Accepted Reservations Calendar View */}
@@ -955,6 +1002,58 @@ const Dashboard = () => {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Incoming Reservations */}
+          {stats.acceptedReservations.incoming.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md mb-6">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {translate("incomingReservations")} ({stats.acceptedReservations.incoming.length})
+                  </h2>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="space-y-4">
+                  {stats.acceptedReservations.incoming
+                    .sort((a, b) => new Date(a.reservationAt) - new Date(b.reservationAt))
+                    .map((reservation) => (
+                      <div key={reservation.id} className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              {reservation.firstName} {reservation.lastName}
+                            </h3>
+                            <div className="text-sm text-gray-500 space-y-1 mt-1">
+                              <p className="flex items-center">
+                                <span className="mr-2">📅</span>
+                                {format(new Date(reservation.reservationAt), "PPp")}
+                              </p>
+                              <p className="flex items-center">
+                                <span className="mr-2">⏱️</span>
+                                {translate("duration")}: {reservation.timeToMake} {translate("minutes")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="sm:text-right">
+                            <p className="text-sm font-medium text-gray-900">
+                              {reservation.BusinessTeam?.Users?.first_name} {reservation.BusinessTeam?.Users?.last_name}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {Array.isArray(reservation.services) ? reservation.services.join(", ") : reservation.services}
+                            </p>
+                            <p className="text-sm font-medium text-accent mt-1">
+                              {reservation.totalPrice?.toFixed(2)} лв.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1074,9 +1173,9 @@ const Dashboard = () => {
               value={selectedRevenuePeriod}
               onChange={(e) => setSelectedRevenuePeriod(e.target.value)}
             >
-              <option value="today">{translate("today")}</option>
               <option value="week">{translate("lastWeek")}</option>
               <option value="month">{translate("lastMonth")}</option>
+              <option value="threeMonths">{translate("last3Months")}</option>
               <option value="custom">{translate("customRange")}</option>
             </select>
           </div>
@@ -1101,13 +1200,13 @@ const Dashboard = () => {
 
         <div className="mt-4">
           <div className="text-3xl font-bold text-gray-900">
-            {calculateRevenue(selectedRevenuePeriod).toFixed(2)} лв.
+            {calculateTeamRevenue(selectedRevenuePeriod).toFixed(2)} лв.
           </div>
           
           <div className="mt-2 text-sm text-gray-500">
-            {selectedRevenuePeriod === 'today' && translate("todayRevenue")}
             {selectedRevenuePeriod === 'week' && translate("lastWeekRevenue")}
             {selectedRevenuePeriod === 'month' && translate("lastMonthRevenue")}
+            {selectedRevenuePeriod === 'threeMonths' && translate("last3MonthsRevenue")}
             {selectedRevenuePeriod === 'custom' && translate("customRangeRevenue")}
           </div>
         </div>
@@ -1131,10 +1230,42 @@ const Dashboard = () => {
                 {translate('decline')}
               </button>
               <button
-                onClick={handleAcceptInvite}
+                onClick={() => {
+                  setShowInviteConfirmation(true);
+                }}
                 className="w-full sm:w-auto px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
               >
                 {translate('accept')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showInviteConfirmation && inviteDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full m-4">
+            <h2 className="text-xl font-semibold mb-4">
+              {translate('join')} {inviteDetails.Business.name}
+            </h2>
+            <p className="mb-6">
+              {translate("invite msg")} {inviteDetails.Business.name}. {translate("wouldYouLikeToAccept")}
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowInviteConfirmation(false);
+                  navigate('/dashboard');
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+              >
+                {translate("decline")}
+              </button>
+              <button
+                onClick={() => handleAcceptInvite(inviteDetails)}
+                className="px-4 py-2 bg-accent text-white rounded hover:bg-accent/90"
+              >
+                {translate("accept")}
               </button>
             </div>
           </div>
@@ -1185,18 +1316,6 @@ const AcceptedReservationCard = ({ reservation }) => {
 // Reservation Card Component
 const ReservationCard = ({ reservation, onStatusUpdate }) => {
   const { translate } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const handleStatusUpdate = async (status) => {
-    setIsLoading(true);
-    try {
-      await onStatusUpdate(reservation.id, status);
-    } catch (error) {
-      console.error('Error updating status:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   return (
     <div className="p-4 bg-gray-50 rounded-lg">
@@ -1227,40 +1346,16 @@ const ReservationCard = ({ reservation, onStatusUpdate }) => {
           </div>
           <div className="flex gap-2 justify-start sm:justify-end">
             <button
-              onClick={() => handleStatusUpdate('approved')}
-              disabled={isLoading}
-              className={`px-3 py-1 text-white rounded-md text-sm transition-colors
-                ${isLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-green-600 hover:bg-green-700'}`}
+              onClick={() => onStatusUpdate(reservation.id, 'approved')}
+              className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
             >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {translate("processing")}
-                </span>
-              ) : translate("accept")}
+              {translate("accept")}
             </button>
             <button
-              onClick={() => handleStatusUpdate('cancelled')}
-              disabled={isLoading}
-              className={`px-3 py-1 text-white rounded-md text-sm transition-colors
-                ${isLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-red-600 hover:bg-red-700'}`}
+              onClick={() => onStatusUpdate(reservation.id, 'cancelled')}
+              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
             >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {translate("processing")}
-                </span>
-              ) : translate("decline")}
+              {translate("decline")}
             </button>
           </div>
         </div>
