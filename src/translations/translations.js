@@ -11,6 +11,11 @@ export const translations = {
 
     fromOffer: "От оферта",
     //Dashboard 
+    myEarnings: "Моите приходи",
+    lastWeekEarnings: "Приходи за последната седмица",
+    lastMonthEarnings: "Приходи за последния месец",
+    customRangeEarnings: "Приходи за избран период",
+
     noReservationsFound: "Няма намерени резервации",
     noPendingReservationsMessage: "Няма чакащи резервации",
     noApprovedReservationsMessage: "Няма одобрени резервации",
@@ -482,6 +487,7 @@ export const translations = {
     failedToSaveEditedOffer: "Грешка при запазване на редактираната оферта",
     upgradePlanRequired: "Необходимо е да надградите плана си, за да създадете повече оферти",
     noPlanSelected: "Не е избран абонаментен план",
+    dashboard_earnings: "Преглед на средствата на бизнеса",
 
 
     //Permissions
@@ -495,7 +501,7 @@ export const translations = {
     transferOwnershipWarning: "След като прехвърлите собствеността, няма да можете да върнете обратно. Сигурни ли сте, че желаете да прехвърлите собствеността?",
     transfer: "Прехвърляне",
 
-
+    processing: "Обработва се..."
   },
   en: {
     upcoming: "Upcoming",
@@ -966,5 +972,7 @@ export const translations = {
     noPlanSelected: "No subscription plan selected",
     cancelled: "Cancelled",
     reservationCancelledMessage: "This reservation has been cancelled",
+
+    processing: "Processing..."
   }
 }

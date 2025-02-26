@@ -62,7 +62,21 @@ const Dashboard = () => {
     end: null
   });
 
+  const [selectedEarningsPeriod, setSelectedEarningsPeriod] = useState('today');
+  const [earningsCustomDateRange, setEarningsCustomDateRange] = useState({
+    start: null,
+    end: null
+  });
+
   const [searchParams] = useSearchParams();
+
+  const [employeeId, setEmployeeId] = useState(null);
+
+  // Add new state for permissions
+  const [userPermissions, setUserPermissions] = useState([]);
+
+  // Add this state at the top level of the Dashboard component
+  const [loadingReservations, setLoadingReservations] = useState({});
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -89,6 +103,27 @@ const Dashboard = () => {
       fetchDashboardData();
     }
   }, [selectedBusiness?.id, authenticatedUserId]);
+
+  // Add useEffect to fetch user permissions
+  useEffect(() => {
+    const fetchUserPermissions = async () => {
+      if (employeeId) {
+        const { data, error } = await supabase
+          .from('BusinessTeamPermissions')
+          .select('permissionId')
+          .eq('businessTeamId', employeeId);
+        
+        if (error) {
+          console.error('Error fetching permissions:', error);
+          return;
+        }
+        
+        setUserPermissions(data.map(p => p.permissionId));
+      }
+    };
+
+    fetchUserPermissions();
+  }, [employeeId]);
 
   const fetchDashboardData = async () => {
     try {
@@ -117,6 +152,9 @@ const Dashboard = () => {
       if (!employeeId) {
         throw new Error('Employee ID not found');
       }
+
+      // Store the employeeId in state
+      setEmployeeId(employeeId);
 
       // Fetch total reservations for team member
       const { data: teamMemberReservations, error: teamMemberReservationsError } = await supabase
@@ -264,6 +302,9 @@ const Dashboard = () => {
 
   const handleStatusUpdate = async (reservationId, newStatus) => {
     try {
+      // Set loading state for this specific reservation
+      setLoadingReservations(prev => ({ ...prev, [reservationId]: true }));
+
       // First update the status in Supabase
       const { error } = await supabase
         .from("Reservations")
@@ -336,6 +377,9 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error updating reservation status:", error);
       setError(error.message);
+    } finally {
+      // Clear loading state for this reservation
+      setLoadingReservations(prev => ({ ...prev, [reservationId]: false }));
     }
   };
 
@@ -466,6 +510,59 @@ const Dashboard = () => {
     return revenue;
   };
 
+  const calculateEmployeeEarnings = (period) => {
+    if (!employeeId) return 0; // Return 0 if employeeId is not yet available
+
+    const now = new Date();
+    let startDate;
+    let endDate = new Date(now.setHours(23, 59, 59, 999));
+
+    switch (period) {
+      case 'today':
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'custom':
+        if (earningsCustomDateRange.start && earningsCustomDateRange.end) {
+          startDate = new Date(earningsCustomDateRange.start);
+          endDate = new Date(earningsCustomDateRange.end);
+        }
+        break;
+      default:
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+    }
+
+    // Filter only approved reservations for the current employee
+    const employeeReservations = Object.values(stats.acceptedReservations)
+      .flat()
+      .filter(reservation => 
+        reservation.status === 'approved' &&
+        reservation.employeeId === employeeId
+      );
+    
+    // Calculate earnings for the selected period
+    const earnings = employeeReservations
+      .filter(reservation => {
+        const reservationDate = new Date(reservation.reservationAt);
+        return reservationDate >= startDate && reservationDate <= endDate;
+      })
+      .reduce((total, reservation) => total + (reservation.totalPrice || 0), 0);
+
+    return earnings;
+  };
+
+  // Add helper function to check permissions
+  const hasPermission = (permissionId) => {
+    return userPermissions.includes(permissionId);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -491,13 +588,63 @@ const Dashboard = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Today's Earnings Card */}
+        {/* Updated Earnings Card with Responsive Design */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-medium text-gray-600">{translate("todayEarnings")}</h3>
-            <span className="text-gray-600">💰</span>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div className="flex-1 w-full">
+              <h3 className="text-sm font-medium text-gray-600">{translate("myEarnings")}</h3>
+              <div className="mt-2">
+                <select
+                  className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+                  value={selectedEarningsPeriod}
+                  onChange={(e) => setSelectedEarningsPeriod(e.target.value)}
+                >
+                  <option value="today">{translate("today")}</option>
+                  <option value="week">{translate("lastWeek")}</option>
+                  <option value="month">{translate("lastMonth")}</option>
+                  <option value="custom">{translate("customRange")}</option>
+                </select>
+              </div>
+            </div>
+            <span className="hidden sm:block text-gray-600">💰</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{calculateRevenue('today').toFixed(2)} лв.</p>
+
+          {selectedEarningsPeriod === 'custom' && (
+            <div className="mb-4">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                  <label className="block text-sm text-gray-600 mb-1">{translate("startDate")}</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+                    value={earningsCustomDateRange.start || ''}
+                    onChange={(e) => setEarningsCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm text-gray-600 mb-1">{translate("endDate")}</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+                    value={earningsCustomDateRange.end || ''}
+                    onChange={(e) => setEarningsCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {calculateEmployeeEarnings(selectedEarningsPeriod).toFixed(2)} лв.
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              {selectedEarningsPeriod === 'today' && translate("todayEarnings")}
+              {selectedEarningsPeriod === 'week' && translate("lastWeekEarnings")}
+              {selectedEarningsPeriod === 'month' && translate("lastMonthEarnings")}
+              {selectedEarningsPeriod === 'custom' && translate("customRangeEarnings")}
+            </p>
+          </div>
         </div>
 
         {/* Team Members Card */}
@@ -536,14 +683,16 @@ const Dashboard = () => {
           <p className="text-2xl font-bold text-gray-900">{stats.totalTeamMemberReservations || 0}</p>
         </div>
 
-        {/* Total Business Reservations Card */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-medium text-gray-600">{translate("businessTotalReservations")}</h3>
-            <span className="text-gray-600">📈</span>
+        {/* Total Business Reservations Card - Only visible with permission */}
+        {hasPermission(18) && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-medium text-gray-600">{translate("businessTotalReservations")}</h3>
+              <span className="text-gray-600">📈</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalBusinessReservations || 0}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalBusinessReservations || 0}</p>
-        </div>
+        )}
 
         {/* Reservation Trend Card */}
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -711,6 +860,7 @@ const Dashboard = () => {
                       key={reservation.id}
                       reservation={reservation}
                       onStatusUpdate={handleStatusUpdate}
+                      isLoading={loadingReservations[reservation.id]}
                     />
                   ))}
                 </div>
@@ -735,6 +885,7 @@ const Dashboard = () => {
                       key={reservation.id}
                       reservation={reservation}
                       onStatusUpdate={handleStatusUpdate}
+                      isLoading={loadingReservations[reservation.id]}
                     />
                   ))}
                 </div>
@@ -759,6 +910,7 @@ const Dashboard = () => {
                       key={reservation.id}
                       reservation={reservation}
                       onStatusUpdate={handleStatusUpdate}
+                      isLoading={loadingReservations[reservation.id]}
                     />
                   ))}
                 </div>
@@ -783,6 +935,7 @@ const Dashboard = () => {
                       key={reservation.id}
                       reservation={reservation}
                       onStatusUpdate={handleStatusUpdate}
+                      isLoading={loadingReservations[reservation.id]}
                     />
                   ))}
                 </div>
@@ -809,6 +962,7 @@ const Dashboard = () => {
                       key={reservation.id}
                       reservation={reservation}
                       onStatusUpdate={handleStatusUpdate}
+                      isLoading={loadingReservations[reservation.id]}
                     />
                   ))}
                 </div>
@@ -822,53 +976,56 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">{translate("revenue")}</h2>
-          <div className="w-full sm:w-auto">
-            <select
-              className="w-full sm:w-auto px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-              value={selectedRevenuePeriod}
-              onChange={(e) => setSelectedRevenuePeriod(e.target.value)}
-            >
-              <option value="today">{translate("today")}</option>
-              <option value="week">{translate("lastWeek")}</option>
-              <option value="month">{translate("lastMonth")}</option>
-              <option value="custom">{translate("customRange")}</option>
-            </select>
+      {/* Revenue Section - Only visible with permission */}
+      {hasPermission(17) && (
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">{translate("revenue")}</h2>
+            <div className="w-full sm:w-auto">
+              <select
+                className="w-full sm:w-auto px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+                value={selectedRevenuePeriod}
+                onChange={(e) => setSelectedRevenuePeriod(e.target.value)}
+              >
+                <option value="today">{translate("today")}</option>
+                <option value="week">{translate("lastWeek")}</option>
+                <option value="month">{translate("lastMonth")}</option>
+                <option value="custom">{translate("customRange")}</option>
+              </select>
+            </div>
+          </div>
+
+          {selectedRevenuePeriod === 'custom' && (
+            <div className="mb-4 flex flex-col sm:flex-row gap-4">
+              <input
+                type="date"
+                className="w-full sm:w-auto px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+                value={customDateRange.start || ''}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+              />
+              <input
+                type="date"
+                className="w-full sm:w-auto px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+                value={customDateRange.end || ''}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+              />
+            </div>
+          )}
+
+          <div className="mt-4">
+            <div className="text-3xl font-bold text-gray-900">
+              {calculateRevenue(selectedRevenuePeriod).toFixed(2)} лв.
+            </div>
+            
+            <div className="mt-2 text-sm text-gray-500">
+              {selectedRevenuePeriod === 'today' && translate("todayRevenue")}
+              {selectedRevenuePeriod === 'week' && translate("lastWeekRevenue")}
+              {selectedRevenuePeriod === 'month' && translate("lastMonthRevenue")}
+              {selectedRevenuePeriod === 'custom' && translate("customRangeRevenue")}
+            </div>
           </div>
         </div>
-
-        {selectedRevenuePeriod === 'custom' && (
-          <div className="mb-4 flex flex-col sm:flex-row gap-4">
-            <input
-              type="date"
-              className="w-full sm:w-auto px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-              value={customDateRange.start || ''}
-              onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-            />
-            <input
-              type="date"
-              className="w-full sm:w-auto px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-              value={customDateRange.end || ''}
-              onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-            />
-          </div>
-        )}
-
-        <div className="mt-4">
-          <div className="text-3xl font-bold text-gray-900">
-            {calculateRevenue(selectedRevenuePeriod).toFixed(2)} лв.
-          </div>
-          
-          <div className="mt-2 text-sm text-gray-500">
-            {selectedRevenuePeriod === 'today' && translate("todayRevenue")}
-            {selectedRevenuePeriod === 'week' && translate("lastWeekRevenue")}
-            {selectedRevenuePeriod === 'month' && translate("lastMonthRevenue")}
-            {selectedRevenuePeriod === 'custom' && translate("customRangeRevenue")}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -912,7 +1069,7 @@ const AcceptedReservationCard = ({ reservation }) => {
 };
 
 // Reservation Card Component
-const ReservationCard = ({ reservation, onStatusUpdate }) => {
+const ReservationCard = ({ reservation, onStatusUpdate, isLoading }) => {
   const { translate } = useLanguage();
   
   return (
@@ -945,15 +1102,25 @@ const ReservationCard = ({ reservation, onStatusUpdate }) => {
           <div className="flex gap-2 justify-start sm:justify-end">
             <button
               onClick={() => onStatusUpdate(reservation.id, 'approved')}
-              className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              disabled={isLoading}
+              className={`px-3 py-1 ${
+                isLoading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-green-600 hover:bg-green-700'
+              } text-white rounded-md text-sm transition-colors`}
             >
-              {translate("accept")}
+              {isLoading ? translate("processing") : translate("accept")}
             </button>
             <button
               onClick={() => onStatusUpdate(reservation.id, 'cancelled')}
-              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+              disabled={isLoading}
+              className={`px-3 py-1 ${
+                isLoading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-red-600 hover:bg-red-700'
+              } text-white rounded-md text-sm transition-colors`}
             >
-              {translate("decline")}
+              {isLoading ? translate("processing") : translate("decline")}
             </button>
           </div>
         </div>
