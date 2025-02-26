@@ -14,13 +14,14 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     pendingReservations: {
       today: [],
-      upcoming: [],
+      tomorrow: [],
+      nextWeek: [],
       past: []
     },
     acceptedReservations: {
       today: [],
       tomorrow: [],
-      thisWeek: [],
+      nextWeek: [],
       thisMonth: []
     },
     totalTeamMembers: 0,
@@ -47,10 +48,11 @@ const Dashboard = () => {
   const [expandedSections, setExpandedSections] = useState({
     today: true,
     tomorrow: true,
-    thisWeek: false,
+    nextWeek: true,
     thisMonth: false,
     pendingToday: true,
-    pendingUpcoming: true,
+    pendingTomorrow: true,
+    pendingNextWeek: true,
     pendingPast: true
   });
 
@@ -181,13 +183,14 @@ const Dashboard = () => {
       const organizedReservations = {
         pending: {
           today: [],
-          upcoming: [],
+          tomorrow: [],
+          nextWeek: [],
           past: []
         },
         accepted: {
           today: [],
           tomorrow: [],
-          thisWeek: [],
+          nextWeek: [],
           thisMonth: []
         }
       };
@@ -200,25 +203,25 @@ const Dashboard = () => {
         
         if (reservation.status === 'pending') {
           if (isToday(reservationDate)) {
-            // Only include today's pending reservations that are in the future
             if (reservationTimeInMinutes > currentTimeInMinutes) {
               organizedReservations.pending.today.push(reservation);
             }
-          } else if (reservationDate > currentDate) {
-            organizedReservations.pending.upcoming.push(reservation);
-          } else {
+          } else if (isTomorrow(reservationDate)) {
+            organizedReservations.pending.tomorrow.push(reservation);
+          } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
+            organizedReservations.pending.nextWeek.push(reservation);
+          } else if (reservationDate < startOfToday) {
             organizedReservations.pending.past.push(reservation);
           }
         } else if (reservation.status === 'approved') {
           if (isToday(reservationDate)) {
-            // Only include today's accepted reservations that are in the future
             if (reservationTimeInMinutes > currentTimeInMinutes) {
               organizedReservations.accepted.today.push(reservation);
             }
           } else if (isTomorrow(reservationDate)) {
             organizedReservations.accepted.tomorrow.push(reservation);
           } else if (isThisWeek(reservationDate) && !isToday(reservationDate) && !isTomorrow(reservationDate)) {
-            organizedReservations.accepted.thisWeek.push(reservation);
+            organizedReservations.accepted.nextWeek.push(reservation);
           } else if (isThisMonth(reservationDate) && !isThisWeek(reservationDate)) {
             organizedReservations.accepted.thisMonth.push(reservation);
           }
@@ -580,7 +583,7 @@ const Dashboard = () => {
               {translate("upcomingAcceptedReservations")} 
               ({stats.acceptedReservations.today.length + 
                 stats.acceptedReservations.tomorrow.length + 
-                stats.acceptedReservations.thisWeek.length + 
+                stats.acceptedReservations.nextWeek.length + 
                 stats.acceptedReservations.thisMonth.length})
             </h2>
             <Link to="/dashboard/reservations" className="text-sm text-accent hover:underline">
@@ -634,21 +637,21 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* This Week's Accepted */}
-          {stats.acceptedReservations.thisWeek.length > 0 && (
+          {/* Next Week's Accepted */}
+          {stats.acceptedReservations.nextWeek.length > 0 && (
             <div className="mb-6">
               <button 
-                onClick={() => toggleSection('thisWeek')}
+                onClick={() => toggleSection('nextWeek')}
                 className="w-full flex justify-between items-center text-lg font-medium text-gray-900 mb-3 hover:text-accent"
               >
-                <span>{translate("thisWeek")} ({stats.acceptedReservations.thisWeek.length})</span>
+                <span>{translate("nextWeek")} ({stats.acceptedReservations.nextWeek.length})</span>
                 <span className="transform transition-transform duration-200">
-                  {expandedSections.thisWeek ? '↑' : '↓'}
+                  {expandedSections.nextWeek ? '↑' : '↓'}
                 </span>
               </button>
-              {expandedSections.thisWeek && (
+              {expandedSections.nextWeek && (
                 <div className="space-y-3">
-                  {stats.acceptedReservations.thisWeek.map(reservation => (
+                  {stats.acceptedReservations.nextWeek.map(reservation => (
                     <AcceptedReservationCard key={reservation.id} reservation={reservation} />
                   ))}
                 </div>
@@ -686,20 +689,6 @@ const Dashboard = () => {
 
       {/* Pending Reservations Section */}
       <div className="bg-white rounded-lg shadow-md">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {translate("pendingReservations")} 
-              ({stats.pendingReservations.today.length + 
-                stats.pendingReservations.upcoming.length + 
-                stats.pendingReservations.past.length})
-            </h2>
-            <Link to="/dashboard/reservations" className="text-sm text-accent hover:underline">
-              {translate("viewAll")}
-            </Link>
-          </div>
-        </div>
-
         <div className="p-6">
           {/* Today's Pending */}
           {stats.pendingReservations.today.length > 0 && (
@@ -709,9 +698,7 @@ const Dashboard = () => {
                 className="w-full flex justify-between items-center text-lg font-medium text-gray-900 mb-3 hover:text-accent"
               >
                 <span>{translate("today")} ({stats.pendingReservations.today.length})</span>
-                <span className="transform transition-transform duration-200">
-                  {expandedSections.pendingToday ? '↑' : '↓'}
-                </span>
+                <span>{expandedSections.pendingToday ? '↑' : '↓'}</span>
               </button>
               {expandedSections.pendingToday && (
                 <div className="space-y-4">
@@ -727,21 +714,43 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Upcoming Pending */}
-          {stats.pendingReservations.upcoming.length > 0 && (
+          {/* Tomorrow's Pending */}
+          {stats.pendingReservations.tomorrow.length > 0 && (
             <div className="mb-6">
               <button 
-                onClick={() => toggleSection('pendingUpcoming')}
+                onClick={() => toggleSection('pendingTomorrow')}
                 className="w-full flex justify-between items-center text-lg font-medium text-gray-900 mb-3 hover:text-accent"
               >
-                <span>{translate("upcomingReservations")} ({stats.pendingReservations.upcoming.length})</span>
-                <span className="transform transition-transform duration-200">
-                  {expandedSections.pendingUpcoming ? '↑' : '↓'}
-                </span>
+                <span>{translate("tomorrow")} ({stats.pendingReservations.tomorrow.length})</span>
+                <span>{expandedSections.pendingTomorrow ? '↑' : '↓'}</span>
               </button>
-              {expandedSections.pendingUpcoming && (
+              {expandedSections.pendingTomorrow && (
                 <div className="space-y-4">
-                  {stats.pendingReservations.upcoming.map((reservation) => (
+                  {stats.pendingReservations.tomorrow.map((reservation) => (
+                    <ReservationCard
+                      key={reservation.id}
+                      reservation={reservation}
+                      onStatusUpdate={handleStatusUpdate}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Next Week's Pending */}
+          {stats.pendingReservations.nextWeek.length > 0 && (
+            <div className="mb-6">
+              <button 
+                onClick={() => toggleSection('pendingNextWeek')}
+                className="w-full flex justify-between items-center text-lg font-medium text-gray-900 mb-3 hover:text-accent"
+              >
+                <span>{translate("nextWeek")} ({stats.pendingReservations.nextWeek.length})</span>
+                <span>{expandedSections.pendingNextWeek ? '↑' : '↓'}</span>
+              </button>
+              {expandedSections.pendingNextWeek && (
+                <div className="space-y-4">
+                  {stats.pendingReservations.nextWeek.map((reservation) => (
                     <ReservationCard
                       key={reservation.id}
                       reservation={reservation}
