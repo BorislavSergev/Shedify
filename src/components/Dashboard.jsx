@@ -1108,6 +1108,21 @@ const AcceptedReservationCard = ({ reservation }) => {
 // Reservation Card Component
 const ReservationCard = ({ reservation, onStatusUpdate }) => {
   const { translate } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
+  const [actionType, setActionType] = useState(null);
+  
+  const handleStatusUpdate = async (id, status) => {
+    setIsLoading(true);
+    setActionType(status);
+    try {
+      await onStatusUpdate(id, status);
+    } catch (error) {
+      console.error('Error updating reservation status:', error);
+    } finally {
+      setIsLoading(false);
+      setActionType(null);
+    }
+  };
   
   return (
     <div className="p-4 bg-gray-50 rounded-lg">
@@ -1138,16 +1153,40 @@ const ReservationCard = ({ reservation, onStatusUpdate }) => {
           </div>
           <div className="flex gap-2 justify-start sm:justify-end">
             <button
-              onClick={() => onStatusUpdate(reservation.id, 'approved')}
-              className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              onClick={() => handleStatusUpdate(reservation.id, 'approved')}
+              disabled={isLoading}
+              className={`px-3 py-1 rounded-md text-sm flex items-center justify-center min-w-[80px] ${
+                isLoading && actionType === 'approved'
+                  ? 'bg-green-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
+              } text-white`}
             >
-              {translate("accept")}
+              {isLoading && actionType === 'approved' ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  {translate("accepting")}
+                </div>
+              ) : (
+                translate("accept")
+              )}
             </button>
             <button
-              onClick={() => onStatusUpdate(reservation.id, 'cancelled')}
-              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+              onClick={() => handleStatusUpdate(reservation.id, 'cancelled')}
+              disabled={isLoading}
+              className={`px-3 py-1 rounded-md text-sm flex items-center justify-center min-w-[80px] ${
+                isLoading && actionType === 'cancelled'
+                  ? 'bg-red-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'
+              } text-white`}
             >
-              {translate("decline")}
+              {isLoading && actionType === 'cancelled' ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  {translate("declining")}
+                </div>
+              ) : (
+                translate("decline")
+              )}
             </button>
           </div>
         </div>
